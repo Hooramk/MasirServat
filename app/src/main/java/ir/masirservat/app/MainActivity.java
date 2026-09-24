@@ -39,7 +39,7 @@ public class MainActivity extends Activity {
     private ProgressBar storyProgress, healthProgress;
     private Button nextButton;
 
-    private String pendingProfile = "کارمند";
+    private String pendingProfile = "دانشجو";
     private int pendingAvatar = 1;
     private String lastOutcome = null;
     private String lastImpact = null;
@@ -175,7 +175,7 @@ public class MainActivity extends Activity {
         hero.setBackground(heroBg());
         hero.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        TextView season = pill("نسخه ۰.۵ · Visual Story", NAVY, GOLD);
+        TextView season = pill("نسخه ۰.۶ · Life Game", NAVY, GOLD);
         LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-2, -2);
         sp.gravity = Gravity.RIGHT;
         season.setLayoutParams(sp);
@@ -257,7 +257,7 @@ public class MainActivity extends Activity {
         box.addView(spacer(12));
 
         box.addView(tv("کاراکترت را بساز", 28, NAVY, true));
-        TextView hint = tv("اسم، ظاهر و مسیر شغلی را انتخاب کن. بعد بازی تیپ مالی تو را پیدا می‌کند.", 16, MUTED, false);
+        TextView hint = tv("اسم، ظاهر و نقطه شروع را انتخاب کن و مستقیم وارد زندگی شو.", 16, MUTED, false);
         hint.setPadding(0, dp(6), 0, dp(14));
         box.addView(hint);
 
@@ -321,28 +321,32 @@ public class MainActivity extends Activity {
         group.setOrientation(RadioGroup.VERTICAL);
         group.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        RadioButton employee = radio("کارمند  ·  درآمد ثابت، رشد آهسته‌تر", true);
-        RadioButton freelancer = radio("فریلنسر  ·  درآمد بیشتر، نوسان بالاتر", false);
-        RadioButton owner = radio("صاحب کسب‌وکار  ·  سرمایه بیشتر، ریسک بیشتر", false);
+        RadioButton employee = radio("دانشجو  ·  پول کمتر، وقت و ارتباط بیشتر", true);
+        RadioButton freelancer = radio("کارآموز  ·  درآمد ثابت کوچک، رشد شغلی سریع‌تر", false);
+        RadioButton owner = radio("فریلنسر تازه‌کار  ·  آزادی بیشتر، درآمد نوسانی", false);
 
         employee.setId(101); freelancer.setId(102); owner.setId(103);
         group.addView(employee); group.addView(freelancer); group.addView(owner);
         group.setOnCheckedChangeListener((g, id) -> {
-            if (id == 102) pendingProfile = "فریلنسر";
-            else if (id == 103) pendingProfile = "صاحب کسب‌وکار";
-            else pendingProfile = "کارمند";
+            if (id == 102) pendingProfile = "کارآموز";
+            else if (id == 103) pendingProfile = "فریلنسر تازه‌کار";
+            else pendingProfile = "دانشجو";
         });
         profileCard.addView(group);
         box.addView(profileCard);
 
-        Button go = button("ادامه به تست شخصیت  ←", GOLD, NAVY);
+        Button go = button("شروع زندگی  ←", GOLD, NAVY);
         go.setOnClickListener(v -> {
             String n = name.getText().toString().trim();
             state.playerName = n.isEmpty() ? "بازیکن" : n;
             state.avatarStyle = pendingAvatar;
             state.applyProfile(pendingProfile);
+            String type = "فریلنسر تازه‌کار".equals(pendingProfile) ? "فرصت‌جو" :
+                    ("کارآموز".equals(pendingProfile) ? "استراتژیست" : "محافظ");
+            CharacterSystem.applyPersonality(state,type);
+            state.personalityChosen = true;
             state.save(prefs);
-            showPersonalityQuiz(0,0,0,0);
+            showPrologue();
         });
         box.addView(go);
 
@@ -556,168 +560,12 @@ public class MainActivity extends Activity {
 
     private void showGame() {
         if (!state.personalityChosen) {
-            showPersonalityQuiz(0,0,0,0);
-            return;
+            CharacterSystem.applyPersonality(state,"محافظ");
+            state.personalityChosen=true;
+            state.save(prefs);
         }
-        if (state.month > 30) {
-            showEnding();
-            return;
-        }
-
-        ScrollView sc=new ScrollView(this);
-        sc.setFillViewport(true);
-        LinearLayout page=new LinearLayout(this);
-        page.setOrientation(LinearLayout.VERTICAL);
-        page.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        page.setBackgroundColor(Color.rgb(235,239,244));
-        sc.addView(page);
-
-        // CINEMATIC STAGE
-        FrameLayout stage=new FrameLayout(this);
-        stage.setBackgroundColor(NAVY);
-        page.addView(stage,new LinearLayout.LayoutParams(-1,dp(340)));
-
-        vnScene=new SceneView(this);
-        stage.addView(vnScene,new FrameLayout.LayoutParams(-1,-1));
-
-        // top HUD
-        LinearLayout hud=new LinearLayout(this);
-        hud.setOrientation(LinearLayout.VERTICAL);
-        hud.setPadding(dp(10),dp(10),dp(10),dp(8));
-        hud.setBackgroundColor(Color.argb(145,7,27,50));
-        FrameLayout.LayoutParams hudp=new FrameLayout.LayoutParams(-1,-2,Gravity.TOP);
-        hudp.setMargins(dp(8),dp(8),dp(8),0);
-        stage.addView(hud,hudp);
-
-        LinearLayout hudTop=new LinearLayout(this);
-        hudTop.setOrientation(LinearLayout.HORIZONTAL);
-        hudTop.setGravity(Gravity.CENTER_VERTICAL);
-        hudTop.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        vnDate=pill("",NAVY,GOLD);
-        TextView profile=tv(safeName()+"  ·  "+state.personalityType,13,Color.WHITE,true);
-        hudTop.addView(profile,new LinearLayout.LayoutParams(0,-2,1));
-        hudTop.addView(vnDate);
-        hud.addView(hudTop);
-
-        LinearLayout meters=new LinearLayout(this);
-        meters.setOrientation(LinearLayout.HORIZONTAL);
-        meters.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        meters.setPadding(0,dp(8),0,0);
-        vnMoney=vnHudStat("💰","پول");
-        vnSkill=vnHudStat("🧠","مهارت");
-        vnFreedom=vnHudStat("🕊","آزادی");
-        vnSocial=vnHudStat("🔥","اعتبار");
-        meters.addView(vnMoney,new LinearLayout.LayoutParams(0,dp(50),1));
-        meters.addView(vnSkill,new LinearLayout.LayoutParams(0,dp(50),1));
-        meters.addView(vnFreedom,new LinearLayout.LayoutParams(0,dp(50),1));
-        meters.addView(vnSocial,new LinearLayout.LayoutParams(0,dp(50),1));
-        hud.addView(meters);
-
-        vnLocation=pill("",Color.WHITE,Color.argb(155,7,27,50));
-        FrameLayout.LayoutParams locp=new FrameLayout.LayoutParams(-2,-2,Gravity.BOTTOM|Gravity.LEFT);
-        locp.setMargins(dp(12),0,0,dp(12));
-        stage.addView(vnLocation,locp);
-
-        // story sheet
-        LinearLayout sheet=new LinearLayout(this);
-        sheet.setOrientation(LinearLayout.VERTICAL);
-        sheet.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        sheet.setPadding(dp(16),dp(14),dp(16),dp(18));
-        sheet.setBackgroundColor(Color.WHITE);
-        page.addView(sheet,new LinearLayout.LayoutParams(-1,-2));
-
-        LinearLayout speakerRow=new LinearLayout(this);
-        speakerRow.setOrientation(LinearLayout.HORIZONTAL);
-        speakerRow.setGravity(Gravity.CENTER_VERTICAL);
-        speakerRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
-        vnSpeaker=pill("",Color.WHITE,NAVY);
-        speakerRow.addView(vnSpeaker);
-        TextView chapter=tv(state.chapterTitle(),13,GOLD,true);
-        chapter.setGravity(Gravity.LEFT);
-        speakerRow.addView(chapter,new LinearLayout.LayoutParams(0,-2,1));
-        sheet.addView(speakerRow);
-
-        vnTitle=tv("",24,NAVY,true);
-        vnTitle.setPadding(0,dp(11),0,dp(8));
-        sheet.addView(vnTitle);
-
-        vnDialog=tv("",17,TEXT,false);
-        vnDialog.setPadding(dp(15),dp(13),dp(15),dp(13));
-        vnDialog.setBackground(bg(Color.rgb(242,245,248),18));
-        sheet.addView(vnDialog);
-
-        TextView choicePrompt=tv("تو چه کار می‌کنی؟",14,GOLD,true);
-        choicePrompt.setPadding(0,dp(15),0,dp(3));
-        sheet.addView(choicePrompt);
-
-        vnChoices=new LinearLayout(this);
-        vnChoices.setOrientation(LinearLayout.VERTICAL);
-        sheet.addView(vnChoices);
-
-        vnResult=new LinearLayout(this);
-        vnResult.setOrientation(LinearLayout.VERTICAL);
-        vnResult.setPadding(dp(14),dp(13),dp(14),dp(13));
-        vnResult.setBackground(bordered(Color.rgb(239,248,243),16,Color.rgb(188,224,203)));
-        LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);
-        rp.setMargins(0,dp(10),0,dp(4));
-        vnResult.setLayoutParams(rp);
-        TextView rt=tv("نتیجه انتخاب",15,GREEN,true);
-        vnResultText=tv("",14,TEXT,false);
-        vnResultText.setPadding(0,dp(5),0,0);
-        vnResult.addView(rt);
-        vnResult.addView(vnResultText);
-        sheet.addView(vnResult);
-
-        vnNext=button("ادامه داستان  ←",GOLD,NAVY);
-        vnNext.setOnClickListener(v -> advanceMonth());
-        sheet.addView(vnNext);
-
-        // compact game nav
-        LinearLayout nav=new LinearLayout(this);
-        nav.setOrientation(LinearLayout.HORIZONTAL);
-        nav.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        nav.setPadding(dp(12),dp(6),dp(12),dp(14));
-        nav.setBackgroundColor(Color.rgb(235,239,244));
-
-        Button map=vnNav("🗺","نقشه");
-        map.setOnClickListener(v -> showCityMap());
-        Button profileBtn=vnNav("👤","پروفایل");
-        profileBtn.setOnClickListener(v -> showCharacterSheet());
-        Button wallet=vnNav("💳","دارایی");
-        wallet.setOnClickListener(v -> showBalanceSheet());
-        Button exit=vnNav("⌂","خروج");
-        exit.setOnClickListener(v -> {state.save(prefs);showWelcome();});
-        nav.addView(map,new LinearLayout.LayoutParams(0,dp(58),1));
-        nav.addView(profileBtn,new LinearLayout.LayoutParams(0,dp(58),1));
-        nav.addView(wallet,new LinearLayout.LayoutParams(0,dp(58),1));
-        nav.addView(exit,new LinearLayout.LayoutParams(0,dp(58),1));
-        page.addView(nav);
-
-        setContentView(sc);
-        render();
-    }
-
-    private TextView vnHudStat(String icon,String label){
-        TextView v=tv(icon+"\n"+label,11,Color.WHITE,true);
-        v.setGravity(Gravity.CENTER);
-        v.setBackground(bg(Color.argb(90,255,255,255),12));
-        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(50),1);
-        p.setMargins(dp(2),0,dp(2),0);
-        v.setLayoutParams(p);
-        return v;
-    }
-
-    private Button vnNav(String icon,String label){
-        Button b=new Button(this);
-        b.setText(icon+"\n"+label);
-        b.setTextSize(11);
-        b.setTextColor(NAVY);
-        b.setAllCaps(false);
-        b.setGravity(Gravity.CENTER);
-        b.setPadding(dp(2),0,dp(2),0);
-        b.setBackground(bg(Color.WHITE,14));
-        return b;
+        Intent intent=new Intent(this,PlayActivity.class);
+        startActivity(intent);
     }
 
     private void buildTopHeader() {

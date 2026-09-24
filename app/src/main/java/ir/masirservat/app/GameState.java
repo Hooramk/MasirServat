@@ -20,6 +20,7 @@ public class GameState {
     public int skill = 35;
     public int freedom = 42;
     public int social = 50;
+    public int storyFlags = 0;
 
     public boolean achEmergency = false;
     public boolean achDebtFree = false;
@@ -119,6 +120,9 @@ public class GameState {
         return "تا پایان داستان، سلامت مالی را بالای ۷۰ نگه دار.";
     }
 
+    public void setStoryFlag(int flag) { storyFlags |= flag; }
+    public boolean hasStoryFlag(int flag) { return (storyFlags & flag) != 0; }
+
     public int achievementCount() {
         int n=0;
         if(achEmergency)n++;
@@ -200,7 +204,7 @@ public class GameState {
                 .putInt("avatarStyle",avatarStyle).putString("personalityType",personalityType).putBoolean("personalityChosen",personalityChosen)
                 .putInt("discipline",discipline).putInt("courage",courage).putInt("calm",calm)
                 .putInt("relAmir",relAmir).putInt("relSara",relSara).putInt("relReza",relReza)
-                .putInt("skill",skill).putInt("freedom",freedom).putInt("social",social)
+                .putInt("skill",skill).putInt("freedom",freedom).putInt("social",social).putInt("storyFlags",storyFlags)
                 .putBoolean("achEmergency",achEmergency).putBoolean("achDebtFree",achDebtFree).putBoolean("achInvestor",achInvestor)
                 .putBoolean("achSideIncome",achSideIncome).putBoolean("achHealth80",achHealth80)
                 .putLong("cash", cash).putLong("salary", salary).putLong("sideIncome", sideIncome)
@@ -232,6 +236,7 @@ public class GameState {
         s.skill=p.getInt("skill",35);
         s.freedom=p.getInt("freedom",42);
         s.social=p.getInt("social",50);
+        s.storyFlags=p.getInt("storyFlags",0);
         s.achEmergency=p.getBoolean("achEmergency",false);
         s.achDebtFree=p.getBoolean("achDebtFree",false);
         s.achInvestor=p.getBoolean("achInvestor",false);

@@ -7,6 +7,22 @@ public class GameState {
     public String profession = "";
     public boolean profileChosen = false;
 
+    public int avatarStyle = 1;
+    public String personalityType = "";
+    public boolean personalityChosen = false;
+    public int discipline = 60;
+    public int courage = 50;
+    public int calm = 60;
+    public int relAmir = 50;
+    public int relSara = 50;
+    public int relReza = 50;
+
+    public boolean achEmergency = false;
+    public boolean achDebtFree = false;
+    public boolean achInvestor = false;
+    public boolean achSideIncome = false;
+    public boolean achHealth80 = false;
+
     public long cash = 60_000_000L;
     public long salary = 35_000_000L;
     public long sideIncome = 0L;
@@ -66,10 +82,12 @@ public class GameState {
         double emergencyMonths = emergencyFund / (double) essential;
         double savings = monthlyIncome() > 0 ? cashFlow() / (double) monthlyIncome() : -1;
         double debtRatio = monthlyIncome() > 0 ? debtPayment / (double) monthlyIncome() : (debt > 0 ? 1 : 0);
-        int score = 45;
+        int score = 42;
         score += (int)Math.round(Math.min(25, emergencyMonths * 5));
         score += (int)Math.round(Math.max(-20, Math.min(20, savings * 100)));
         score -= (int)Math.round(Math.min(25, debtRatio * 100));
+        score += (discipline - 50) / 12;
+        score += (calm - 50) / 18;
         if (netWorth() > 0) score += 5;
         return Math.max(0, Math.min(100, score));
     }
@@ -82,6 +100,57 @@ public class GameState {
         if (m <= 20) return "فصل ۴ · بحران و فرصت";
         if (m <= 25) return "فصل ۵ · ساختن دارایی";
         return "فصل ۶ · بازی بلندمدت";
+    }
+
+    public String currentMission() {
+        if (month <= 5) return "صندوق اضطراری را به ۲ ماه هزینه ضروری برسان.";
+        if (month <= 10) return "جریان نقدی را مثبت نگه دار و قدرت خریدت را حفظ کن.";
+        if (month <= 15) return "بدهی مصرفی را کنترل کن؛ برای ظاهر بدهکار نشو.";
+        if (month <= 20) return "از بحران عبور کن بدون اینکه ترازنامه‌ات فروبریزد.";
+        if (month <= 25) return "حداقل یک دارایی مولد یا سرمایه‌گذاری بساز.";
+        return "تا پایان داستان، سلامت مالی را بالای ۷۰ نگه دار.";
+    }
+
+    public int achievementCount() {
+        int n=0;
+        if(achEmergency)n++;
+        if(achDebtFree)n++;
+        if(achInvestor)n++;
+        if(achSideIncome)n++;
+        if(achHealth80)n++;
+        return n;
+    }
+
+    public String unlockAchievements() {
+        StringBuilder out=new StringBuilder();
+        long essential=Math.max(1,essentialExpenses());
+
+        if(!achEmergency && emergencyFund >= essential*3L){
+            achEmergency=true;
+            append(out,"🛡 صندوق امن · ۳ ماه هزینه ضروری");
+        }
+        if(!achDebtFree && month>2 && debt==0 && debtPayment==0){
+            achDebtFree=true;
+            append(out,"⛓ بدون بدهی · بدهی مصرفی صفر");
+        }
+        if(!achInvestor && (gold+funds+business) >= Math.max(10_000_000L, monthlyIncome()/2)){
+            achInvestor=true;
+            append(out,"📈 اولین دارایی · سرمایه‌گذاری واقعی");
+        }
+        if(!achSideIncome && sideIncome>0 && !"فریلنسر".equals(profession) && !"صاحب کسب‌وکار".equals(profession)){
+            achSideIncome=true;
+            append(out,"💼 درآمد دوم · منبع درآمد تازه");
+        }
+        if(!achHealth80 && financialHealth()>=80){
+            achHealth80=true;
+            append(out,"🏆 سلامت ۸۰ · تراز مالی قدرتمند");
+        }
+        return out.toString();
+    }
+
+    private static void append(StringBuilder s,String x){
+        if(s.length()>0)s.append("\n");
+        s.append(x);
     }
 
     public void settleMonth() {
@@ -120,6 +189,11 @@ public class GameState {
     public void save(SharedPreferences p) {
         p.edit()
                 .putString("playerName", playerName).putString("profession", profession).putBoolean("profileChosen", profileChosen)
+                .putInt("avatarStyle",avatarStyle).putString("personalityType",personalityType).putBoolean("personalityChosen",personalityChosen)
+                .putInt("discipline",discipline).putInt("courage",courage).putInt("calm",calm)
+                .putInt("relAmir",relAmir).putInt("relSara",relSara).putInt("relReza",relReza)
+                .putBoolean("achEmergency",achEmergency).putBoolean("achDebtFree",achDebtFree).putBoolean("achInvestor",achInvestor)
+                .putBoolean("achSideIncome",achSideIncome).putBoolean("achHealth80",achHealth80)
                 .putLong("cash", cash).putLong("salary", salary).putLong("sideIncome", sideIncome)
                 .putLong("passiveIncome", passiveIncome).putLong("housing", housing).putLong("food", food)
                 .putLong("transport", transport).putLong("utilities", utilities).putLong("health", health)
@@ -137,6 +211,20 @@ public class GameState {
         s.playerName=p.getString("playerName","");
         s.profession=p.getString("profession","");
         s.profileChosen=p.getBoolean("profileChosen",false);
+        s.avatarStyle=p.getInt("avatarStyle",1);
+        s.personalityType=p.getString("personalityType","");
+        s.personalityChosen=p.getBoolean("personalityChosen",false);
+        s.discipline=p.getInt("discipline",60);
+        s.courage=p.getInt("courage",50);
+        s.calm=p.getInt("calm",60);
+        s.relAmir=p.getInt("relAmir",50);
+        s.relSara=p.getInt("relSara",50);
+        s.relReza=p.getInt("relReza",50);
+        s.achEmergency=p.getBoolean("achEmergency",false);
+        s.achDebtFree=p.getBoolean("achDebtFree",false);
+        s.achInvestor=p.getBoolean("achInvestor",false);
+        s.achSideIncome=p.getBoolean("achSideIncome",false);
+        s.achHealth80=p.getBoolean("achHealth80",false);
         s.cash=p.getLong("cash",s.cash); s.salary=p.getLong("salary",s.salary); s.sideIncome=p.getLong("sideIncome",0);
         s.passiveIncome=p.getLong("passiveIncome",0); s.housing=p.getLong("housing",s.housing); s.food=p.getLong("food",s.food);
         s.transport=p.getLong("transport",s.transport); s.utilities=p.getLong("utilities",s.utilities); s.health=p.getLong("health",s.health);

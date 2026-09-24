@@ -66,6 +66,15 @@ public class MainActivity extends Activity {
         showWelcome();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (prefs != null) {
+            state = GameState.load(prefs);
+            showWelcome();
+        }
+    }
+
     private int dp(int x) {
         return Math.round(x * getResources().getDisplayMetrics().density);
     }

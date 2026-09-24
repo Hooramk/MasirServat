@@ -40,8 +40,11 @@ public class MainActivity extends Activity {
     private Button nextButton;
 
     private String pendingProfile = "کارمند";
+    private int pendingAvatar = 1;
     private String lastOutcome = null;
     private String lastImpact = null;
+    private CharacterAvatarView playerAvatar, speakerAvatar;
+    private TextView personalityText, levelText, missionText, traitText, achievementText;
 
     @Override
     public void onCreate(Bundle b) {
@@ -159,55 +162,68 @@ public class MainActivity extends Activity {
 
         LinearLayout hero = new LinearLayout(this);
         hero.setOrientation(LinearLayout.VERTICAL);
-        hero.setPadding(dp(20), dp(26), dp(20), dp(25));
+        hero.setPadding(dp(20), dp(24), dp(20), dp(24));
         hero.setBackground(heroBg());
         hero.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        TextView season = pill("داستان مالی تو · نسخه ۰.۲", NAVY, GOLD);
+        TextView season = pill("نسخه ۰.۳ · بازی کاراکتری", NAVY, GOLD);
         LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-2, -2);
         sp.gravity = Gravity.RIGHT;
         season.setLayoutParams(sp);
         hero.addView(season);
-        hero.addView(spacer(16));
+        hero.addView(spacer(12));
 
-        TextView title = tv("مسیر ثروت", 36, Color.WHITE, true);
-        hero.addView(title);
+        LinearLayout introRow = new LinearLayout(this);
+        introRow.setOrientation(LinearLayout.HORIZONTAL);
+        introRow.setGravity(Gravity.CENTER_VERTICAL);
+        introRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        TextView sub = tv("هر انتخاب، بخشی از داستان زندگی مالی توست.", 18, Color.rgb(223,229,236), false);
-        sub.setPadding(0, dp(8), 0, 0);
-        hero.addView(sub);
+        CharacterAvatarView coverAvatar = new CharacterAvatarView(this);
+        coverAvatar.setCharacter(state.profileChosen ? state.avatarStyle : 4, "player");
+        introRow.addView(coverAvatar, new LinearLayout.LayoutParams(dp(100), dp(118)));
 
+        LinearLayout introText = new LinearLayout(this);
+        introText.setOrientation(LinearLayout.VERTICAL);
+        TextView title = tv("مسیر ثروت", 34, Color.WHITE, true);
+        TextView sub = tv("زندگی مالی‌ات را بازی کن؛ نه فقط حسابش کن.", 17, Color.rgb(223,229,236), false);
+        sub.setPadding(0, dp(7), 0, 0);
+        introText.addView(title);
+        introText.addView(sub);
+        introRow.addView(introText, new LinearLayout.LayoutParams(0, -2, 1));
+        hero.addView(introRow);
         box.addView(hero);
-        box.addView(spacer(14));
 
         LinearLayout story = card();
         story.addView(tv("تهران، ۱۴۰۵", 16, GOLD, true));
         TextView intro = tv(
-                "۲۵ سالته و تازه تصمیم گرفته‌ای کنترل پولت را جدی بگیری. تورم، اجاره، وام، دوستان، خانواده، شغل و فرصت‌های سرمایه‌گذاری یکی‌یکی وارد داستان می‌شوند. قرار نیست جواب‌های کتابی بدهی؛ باید با پیامد انتخاب‌ها زندگی کنی.",
+                "کاراکتر خودت را می‌سازی، تیپ مالی‌ات را کشف می‌کنی و در ۳۰ ماه با آدم‌ها، وسوسه‌ها، بحران‌ها و فرصت‌های واقعی روبه‌رو می‌شوی. انتخاب‌ها فقط پولت را تغییر نمی‌دهند؛ شخصیتت هم تغییر می‌کند.",
                 17, TEXT, false);
         intro.setPadding(0, dp(8), 0, dp(4));
         story.addView(intro);
         box.addView(story);
 
         if (state.profileChosen && prefs.contains("month")) {
-            Button cont = button("ادامه داستان  ←", GOLD, NAVY);
+            Button cont = button("ادامه بازی  ←", GOLD, NAVY);
             cont.setOnClickListener(v -> {
-                if (state.month > 30) showEnding();
+                if (!state.personalityChosen) showPersonalityQuiz(0,0,0,0);
+                else if (state.month > 30) showEnding();
                 else showGame();
             });
             box.addView(cont);
 
-            TextView save = tv("ذخیره فعلی: " + safeName() + " · " + state.profession + " · ماه " + nf.format(state.month), 14, MUTED, false);
+            String p = state.personalityChosen ? " · " + state.personalityType : "";
+            TextView save = tv("ذخیره: " + safeName() + " · " + state.profession + p + " · ماه " + nf.format(state.month), 14, MUTED, false);
             save.setGravity(Gravity.CENTER);
             save.setPadding(0, dp(3), 0, dp(10));
             box.addView(save);
         }
 
-        Button fresh = outlineButton(state.profileChosen ? "شروع یک داستان جدید" : "شروع داستان");
+        Button fresh = outlineButton(state.profileChosen ? "ساخت کاراکتر جدید" : "ساخت کاراکتر");
         fresh.setOnClickListener(v -> {
             prefs.edit().clear().apply();
             state = new GameState();
             pendingProfile = "کارمند";
+            pendingAvatar = 1;
             showSetup();
         });
         box.addView(fresh);
@@ -224,16 +240,16 @@ public class MainActivity extends Activity {
         LinearLayout box = new LinearLayout(this);
         basePage(sc, box);
 
-        TextView step = pill("مرحله ۱ از ۲", Color.WHITE, NAVY);
+        TextView step = pill("مرحله ۱ از ۳", Color.WHITE, NAVY);
         LinearLayout.LayoutParams spp = new LinearLayout.LayoutParams(-2, -2);
         spp.gravity = Gravity.RIGHT;
         step.setLayoutParams(spp);
         box.addView(step);
-        box.addView(spacer(14));
+        box.addView(spacer(12));
 
-        box.addView(tv("شخصیت داستانت را بساز", 28, NAVY, true));
-        TextView hint = tv("اسم و نقطه شروع تو روی روایت و اعداد اولیه اثر می‌گذارد.", 16, MUTED, false);
-        hint.setPadding(0, dp(7), 0, dp(18));
+        box.addView(tv("کاراکترت را بساز", 28, NAVY, true));
+        TextView hint = tv("اسم، ظاهر و مسیر شغلی را انتخاب کن. بعد بازی تیپ مالی تو را پیدا می‌کند.", 16, MUTED, false);
+        hint.setPadding(0, dp(6), 0, dp(14));
         box.addView(hint);
 
         LinearLayout nameCard = card();
@@ -253,9 +269,42 @@ public class MainActivity extends Activity {
         nameCard.addView(name);
         box.addView(nameCard);
 
+        LinearLayout avatarCard = card();
+        avatarCard.addView(tv("ظاهر کاراکتر", 16, TEXT, true));
+        TextView ah = tv("یکی را انتخاب کن؛ بعداً می‌توانیم لباس و آیتم‌های بیشتری هم باز کنیم.", 13, MUTED, false);
+        ah.setPadding(0,dp(3),0,dp(8));
+        avatarCard.addView(ah);
+
+        HorizontalScrollView hsv = new HorizontalScrollView(this);
+        hsv.setHorizontalScrollBarEnabled(false);
+        LinearLayout avatars = new LinearLayout(this);
+        avatars.setOrientation(LinearLayout.HORIZONTAL);
+        avatars.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        for (int i=1;i<=4;i++) {
+            final int style=i;
+            LinearLayout choice=new LinearLayout(this);
+            choice.setOrientation(LinearLayout.VERTICAL);
+            choice.setGravity(Gravity.CENTER);
+            choice.setPadding(dp(6),dp(4),dp(6),dp(4));
+            CharacterAvatarView av=new CharacterAvatarView(this);
+            av.setCharacter(style,"player");
+            choice.addView(av,new LinearLayout.LayoutParams(dp(92),dp(108)));
+            TextView label=tv("کاراکتر "+nf.format(i),13,NAVY,true);
+            label.setGravity(Gravity.CENTER);
+            choice.addView(label);
+            choice.setOnClickListener(v -> {
+                pendingAvatar=style;
+                Toast.makeText(this,"کاراکتر "+nf.format(style)+" انتخاب شد",Toast.LENGTH_SHORT).show();
+            });
+            avatars.addView(choice,new LinearLayout.LayoutParams(dp(108),dp(142)));
+        }
+        hsv.addView(avatars);
+        avatarCard.addView(hsv);
+        box.addView(avatarCard);
+
         LinearLayout profileCard = card();
-        profileCard.addView(tv("از کجا شروع می‌کنی؟", 16, TEXT, true));
-        TextView ph = tv("هیچ مسیر کاملاً آسان یا سخت نیست؛ نوع ریسک‌ها فرق می‌کند.", 14, MUTED, false);
+        profileCard.addView(tv("مسیر شغلی", 16, TEXT, true));
+        TextView ph = tv("هر مسیر درآمد و ریسک متفاوتی دارد.", 14, MUTED, false);
         ph.setPadding(0, dp(4), 0, dp(8));
         profileCard.addView(ph);
 
@@ -267,12 +316,8 @@ public class MainActivity extends Activity {
         RadioButton freelancer = radio("فریلنسر  ·  درآمد بیشتر، نوسان بالاتر", false);
         RadioButton owner = radio("صاحب کسب‌وکار  ·  سرمایه بیشتر، ریسک بیشتر", false);
 
-        employee.setId(101);
-        freelancer.setId(102);
-        owner.setId(103);
-        group.addView(employee);
-        group.addView(freelancer);
-        group.addView(owner);
+        employee.setId(101); freelancer.setId(102); owner.setId(103);
+        group.addView(employee); group.addView(freelancer); group.addView(owner);
         group.setOnCheckedChangeListener((g, id) -> {
             if (id == 102) pendingProfile = "فریلنسر";
             else if (id == 103) pendingProfile = "صاحب کسب‌وکار";
@@ -281,13 +326,14 @@ public class MainActivity extends Activity {
         profileCard.addView(group);
         box.addView(profileCard);
 
-        Button go = button("ساخت شخصیت و ادامه", GOLD, NAVY);
+        Button go = button("ادامه به تست شخصیت  ←", GOLD, NAVY);
         go.setOnClickListener(v -> {
             String n = name.getText().toString().trim();
             state.playerName = n.isEmpty() ? "بازیکن" : n;
+            state.avatarStyle = pendingAvatar;
             state.applyProfile(pendingProfile);
             state.save(prefs);
-            showPrologue();
+            showPersonalityQuiz(0,0,0,0);
         });
         box.addView(go);
 
@@ -296,6 +342,135 @@ public class MainActivity extends Activity {
         box.addView(back);
 
         setContentView(sc);
+    }
+
+    private void showPersonalityQuiz(int q, int risk, int disciplineScore, int calmScore) {
+        final String[] questions = {
+                "یک مبلغ اضافه دستت آمده. اولین واکنشت چیست؟",
+                "سرمایه‌گذاری‌ات ناگهان ۱۵٪ افت کرده. چه می‌کنی؟",
+                "یک فرصت کاری پردرآمد اما نامطمئن پیشنهاد شده.",
+                "دوستانت برای یک خرید گران هیجان‌زده‌اند.",
+                "برای یک تصمیم مالی بزرگ معمولاً به چه چیزی تکیه می‌کنی؟"
+        };
+        final String[] a = {
+                "اول بخشی را برای آینده کنار می‌گذارم",
+                "دلیل افت را بررسی می‌کنم و عجله نمی‌کنم",
+                "عددها را بررسی می‌کنم و اگر منطقی بود امتحان می‌کنم",
+                "بودجه‌ام را نگاه می‌کنم، بعد تصمیم می‌گیرم",
+                "مقایسه، عدد و سناریوی بدبینانه"
+        };
+        final String[] b = {
+                "حالا که آمده، ازش لذت می‌برم",
+                "می‌ترسم بیشتر بریزد؛ سریع می‌فروشم",
+                "یا سریع می‌پرم وسطش یا کلاً ردش می‌کنم",
+                "احتمالاً همراه جمع می‌شوم",
+                "حس لحظه و شهود"
+        };
+
+        if (q >= questions.length) {
+            String type;
+            if (risk >= 3 && disciplineScore >= 2) type="فرصت‌جو";
+            else if (risk >= 3) type="جسور";
+            else if (disciplineScore >= 4 && calmScore >= 2) type="استراتژیست";
+            else if (calmScore <= 1 && disciplineScore <= 2) type="احساسی";
+            else type="محافظ";
+
+            CharacterSystem.applyPersonality(state,type);
+            state.personalityChosen=true;
+            state.save(prefs);
+            showPersonalityResult();
+            return;
+        }
+
+        ScrollView sc=new ScrollView(this);
+        LinearLayout box=new LinearLayout(this);
+        basePage(sc,box);
+
+        TextView step=pill("مرحله ۲ از ۳ · سؤال "+nf.format(q+1)+" از ۵",Color.WHITE,NAVY);
+        LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(-2,-2);
+        pp.gravity=Gravity.RIGHT; step.setLayoutParams(pp);
+        box.addView(step);
+        box.addView(spacer(14));
+
+        CharacterAvatarView av=new CharacterAvatarView(this);
+        av.setCharacter(state.avatarStyle,"player");
+        LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(dp(125),dp(145));
+        ap.gravity=Gravity.CENTER;
+        av.setLayoutParams(ap);
+        box.addView(av);
+
+        TextView qt=tv(questions[q],23,NAVY,true);
+        qt.setGravity(Gravity.CENTER);
+        qt.setPadding(dp(8),dp(6),dp(8),dp(16));
+        box.addView(qt);
+
+        Button ba=outlineButton(a[q]);
+        ba.setOnClickListener(v -> {
+            int nr=risk, nd=disciplineScore+1, nc=calmScore+1;
+            if(q==2) nr++;
+            showPersonalityQuiz(q+1,nr,nd,nc);
+        });
+        box.addView(ba);
+
+        Button bb=outlineButton(b[q]);
+        bb.setOnClickListener(v -> showPersonalityQuiz(q+1,risk+1,disciplineScore,Math.max(0,calmScore-1)));
+        box.addView(bb);
+
+        setContentView(sc);
+    }
+
+    private void showPersonalityResult() {
+        ScrollView sc=new ScrollView(this);
+        LinearLayout box=new LinearLayout(this);
+        basePage(sc,box);
+
+        LinearLayout hero=new LinearLayout(this);
+        hero.setOrientation(LinearLayout.HORIZONTAL);
+        hero.setGravity(Gravity.CENTER_VERTICAL);
+        hero.setPadding(dp(18),dp(20),dp(18),dp(20));
+        hero.setBackground(heroBg());
+        hero.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+        CharacterAvatarView av=new CharacterAvatarView(this);
+        av.setCharacter(state.avatarStyle,"player");
+        hero.addView(av,new LinearLayout.LayoutParams(dp(115),dp(135)));
+
+        LinearLayout txt=new LinearLayout(this);
+        txt.setOrientation(LinearLayout.VERTICAL);
+        txt.addView(tv("تیپ مالی تو",14,GOLD,true));
+        txt.addView(tv(state.personalityType,29,Color.WHITE,true));
+        TextView desc=tv(CharacterSystem.description(state),15,Color.rgb(224,231,238),false);
+        desc.setPadding(0,dp(7),0,0);
+        txt.addView(desc);
+        hero.addView(txt,new LinearLayout.LayoutParams(0,-2,1));
+        box.addView(hero);
+
+        LinearLayout traits=card();
+        traits.addView(tv("ویژگی‌های شروع",18,NAVY,true));
+        traits.addView(traitRow("انضباط",state.discipline));
+        traits.addView(traitRow("جسارت",state.courage));
+        traits.addView(traitRow("آرامش",state.calm));
+        box.addView(traits);
+
+        Button go=button("ورود به داستان  ←",GOLD,NAVY);
+        go.setOnClickListener(v -> showPrologue());
+        box.addView(go);
+        setContentView(sc);
+    }
+
+    private LinearLayout traitRow(String name,int value) {
+        LinearLayout row=new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        TextView n=tv(name+"  "+nf.format(value),14,TEXT,true);
+        row.addView(n,new LinearLayout.LayoutParams(dp(110),dp(38)));
+        ProgressBar p=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
+        p.setMax(100); p.setProgress(value);
+        p.setProgressTintList(ColorStateList.valueOf(GOLD));
+        p.setProgressBackgroundTintList(ColorStateList.valueOf(Color.rgb(232,235,238)));
+        row.addView(p,new LinearLayout.LayoutParams(0,dp(7),1));
+        return row;
     }
 
     private RadioButton radio(String text, boolean checked) {
@@ -320,40 +495,50 @@ public class MainActivity extends Activity {
         basePage(sc, box);
 
         LinearLayout hero = new LinearLayout(this);
-        hero.setOrientation(LinearLayout.VERTICAL);
-        hero.setPadding(dp(20), dp(24), dp(20), dp(24));
+        hero.setOrientation(LinearLayout.HORIZONTAL);
+        hero.setGravity(Gravity.CENTER_VERTICAL);
+        hero.setPadding(dp(18), dp(22), dp(18), dp(22));
         hero.setBackground(heroBg());
         hero.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        hero.addView(pill("مرحله ۲ از ۲", NAVY, GOLD));
-        hero.addView(spacer(15));
-        hero.addView(tv("صبحِ اولین ماه", 30, Color.WHITE, true));
+        CharacterAvatarView av=new CharacterAvatarView(this);
+        av.setCharacter(state.avatarStyle,"player");
+        hero.addView(av,new LinearLayout.LayoutParams(dp(120),dp(145)));
+
+        LinearLayout txt=new LinearLayout(this);
+        txt.setOrientation(LinearLayout.VERTICAL);
+        txt.addView(pill("مرحله ۳ از ۳",NAVY,GOLD));
+        TextView h=tv("صبحِ اولین ماه",28,Color.WHITE,true);
+        h.setPadding(0,dp(10),0,0);
+        txt.addView(h);
+        TextView who=tv(safeName()+" · "+state.profession+" · "+state.personalityType,15,Color.rgb(222,230,238),false);
+        who.setPadding(0,dp(5),0,0);
+        txt.addView(who);
+        hero.addView(txt,new LinearLayout.LayoutParams(0,-2,1));
+        box.addView(hero);
 
         String profileLine;
         if ("فریلنسر".equals(state.profession)) {
-            profileLine = "پروژه داری و درآمدت از کارمند معمولی بیشتر است، اما هیچ تضمینی نیست ماه بعد هم همین مقدار باشد.";
+            profileLine = "پروژه داری و درآمدت بیشتر است، اما هیچ تضمینی نیست ماه بعد هم همین مقدار باشد.";
         } else if ("صاحب کسب‌وکار".equals(state.profession)) {
-            profileLine = "کسب‌وکارت فروش دارد، اما پول شرکت و پول شخصی گاهی مرزشان را گم می‌کنند. رشد می‌تواند سریع باشد، سقوط هم.";
+            profileLine = "کسب‌وکارت فروش دارد، اما رشد سریع و ریسک افت کنار هم هستند.";
         } else {
-            profileLine = "حقوقت هر ماه می‌آید و همین حس امنیت می‌دهد؛ اما تورم سریع‌تر از افزایش حقوق حرکت می‌کند.";
+            profileLine = "حقوقت هر ماه می‌آید، اما تورم از افزایش حقوق سریع‌تر حرکت می‌کند.";
         }
 
-        TextView p = tv(
-                safeName() + "، امروز تصمیم گرفته‌ای فقط بیشتر پول درنیاوری؛ بهتر تصمیم بگیری. " +
-                        profileLine + "\n\nیک قانون داری: هر ماه فقط یک تصمیم مهم، اما هر تصمیم روی ماه‌های بعد اثر می‌گذارد.",
-                17, Color.rgb(226,232,238), false);
-        p.setPadding(0, dp(12), 0, 0);
-        hero.addView(p);
-        box.addView(hero);
+        LinearLayout story=card();
+        story.addView(tv("داستان تو شروع می‌شود",19,NAVY,true));
+        TextView p=tv(profileLine+"\n\n"+CharacterSystem.description(state)+"\n\nاز اینجا به بعد انتخاب‌ها روی پول، شخصیت و رابطه‌هایت اثر می‌گذارند.",17,TEXT,false);
+        p.setPadding(0,dp(8),0,0);
+        story.addView(p);
+        box.addView(story);
 
-        LinearLayout goal = card();
-        goal.addView(tv("🎯 هدف فصل اول", 19, NAVY, true));
-        TextView gt = tv("۳۰ ماه دوام بیاور، بدهی مصرفی را کنترل کن، صندوق اضطراری بساز و کاری کن ثروت واقعی‌ات با وجود تورم رشد کند.", 16, TEXT, false);
-        gt.setPadding(0, dp(7), 0, 0);
-        goal.addView(gt);
+        LinearLayout goal=card();
+        goal.addView(tv("🎯 مأموریت اول",18,GOLD,true));
+        goal.addView(tv(state.currentMission(),16,TEXT,false));
         box.addView(goal);
 
-        Button start = button("شروع ماه اول", GOLD, NAVY);
+        Button start=button("شروع بازی",GOLD,NAVY);
         start.setOnClickListener(v -> showGame());
         box.addView(start);
 
@@ -361,6 +546,10 @@ public class MainActivity extends Activity {
     }
 
     private void showGame() {
+        if (!state.personalityChosen) {
+            showPersonalityQuiz(0,0,0,0);
+            return;
+        }
         if (state.month > 30) {
             showEnding();
             return;
@@ -382,43 +571,60 @@ public class MainActivity extends Activity {
     private void buildTopHeader() {
         LinearLayout head = new LinearLayout(this);
         head.setOrientation(LinearLayout.VERTICAL);
-        head.setPadding(dp(18), dp(18), dp(18), dp(18));
+        head.setPadding(dp(16), dp(16), dp(16), dp(16));
         head.setBackground(heroBg());
         head.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        LinearLayout top = new LinearLayout(this);
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        top.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        chapterText = tv("", 15, GOLD, true);
-        row.addView(chapterText, new LinearLayout.LayoutParams(0, -2, 1));
-
+        chapterText = tv("", 14, GOLD, true);
+        top.addView(chapterText, new LinearLayout.LayoutParams(0, -2, 1));
         monthText = pill("", NAVY, GOLD);
-        row.addView(monthText);
-        head.addView(row);
+        top.addView(monthText);
+        head.addView(top);
 
-        playerText = tv("", 22, Color.WHITE, true);
-        playerText.setPadding(0, dp(12), 0, dp(4));
-        head.addView(playerText);
+        LinearLayout identity=new LinearLayout(this);
+        identity.setOrientation(LinearLayout.HORIZONTAL);
+        identity.setGravity(Gravity.CENTER_VERTICAL);
+        identity.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        identity.setPadding(0,dp(8),0,0);
+
+        playerAvatar=new CharacterAvatarView(this);
+        playerAvatar.setCharacter(state.avatarStyle,"player");
+        identity.addView(playerAvatar,new LinearLayout.LayoutParams(dp(82),dp(96)));
+
+        LinearLayout names=new LinearLayout(this);
+        names.setOrientation(LinearLayout.VERTICAL);
+        playerText=tv("",20,Color.WHITE,true);
+        personalityText=tv("",14,Color.rgb(215,224,233),false);
+        levelText=tv("",13,GOLD,true);
+        personalityText.setPadding(0,dp(2),0,dp(3));
+        names.addView(playerText); names.addView(personalityText); names.addView(levelText);
+        identity.addView(names,new LinearLayout.LayoutParams(0,-2,1));
+        head.addView(identity);
 
         storyProgress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         storyProgress.setMax(30);
         storyProgress.setProgressTintList(ColorStateList.valueOf(GOLD));
         storyProgress.setProgressBackgroundTintList(ColorStateList.valueOf(Color.rgb(64,82,103)));
         LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(-1, dp(8));
-        pp.setMargins(0, dp(9), 0, 0);
+        pp.setMargins(0, dp(8), 0, 0);
         storyProgress.setLayoutParams(pp);
         head.addView(storyProgress);
-
-        TextView progressLabel = tv("پیشرفت داستان · ۳۰ ماه", 12, Color.rgb(190,201,213), false);
-        progressLabel.setPadding(0, dp(5), 0, 0);
-        head.addView(progressLabel);
 
         root.addView(head);
     }
 
     private void buildStatusCard() {
+        LinearLayout mission=card();
+        missionText=tv("",15,TEXT,true);
+        mission.addView(tv("🎯 مأموریت فعلی",14,GOLD,true));
+        mission.addView(missionText);
+        root.addView(mission);
+
         LinearLayout status = card();
 
         LinearLayout healthRow = new LinearLayout(this);
@@ -437,9 +643,14 @@ public class MainActivity extends Activity {
         healthProgress.setProgressTintList(ColorStateList.valueOf(GREEN));
         healthProgress.setProgressBackgroundTintList(ColorStateList.valueOf(Color.rgb(232,235,238)));
         LinearLayout.LayoutParams hp = new LinearLayout.LayoutParams(-1, dp(7));
-        hp.setMargins(0, dp(8), 0, dp(13));
+        hp.setMargins(0, dp(8), 0, dp(10));
         healthProgress.setLayoutParams(hp);
         status.addView(healthProgress);
+
+        traitText=tv("",13,MUTED,true);
+        traitText.setGravity(Gravity.CENTER);
+        traitText.setPadding(0,0,0,dp(10));
+        status.addView(traitText);
 
         LinearLayout stats = new LinearLayout(this);
         stats.setOrientation(LinearLayout.HORIZONTAL);
@@ -454,6 +665,12 @@ public class MainActivity extends Activity {
         stats.addView(worthText, new LinearLayout.LayoutParams(0, dp(75), 1));
 
         status.addView(stats);
+
+        achievementText=tv("",13,GOLD,true);
+        achievementText.setGravity(Gravity.CENTER);
+        achievementText.setPadding(0,dp(11),0,0);
+        status.addView(achievementText);
+
         root.addView(status);
     }
 
@@ -475,15 +692,19 @@ public class MainActivity extends Activity {
         meta.setGravity(Gravity.CENTER_VERTICAL);
         meta.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        speakerText = pill("", Color.WHITE, NAVY);
-        meta.addView(speakerText);
+        speakerAvatar=new CharacterAvatarView(this);
+        meta.addView(speakerAvatar,new LinearLayout.LayoutParams(dp(72),dp(82)));
 
-        TextView decision = tv("  تصمیم این ماه", 13, MUTED, true);
-        meta.addView(decision);
+        LinearLayout who=new LinearLayout(this);
+        who.setOrientation(LinearLayout.VERTICAL);
+        speakerText = tv("",16,NAVY,true);
+        TextView decision = tv("تصمیم این ماه", 13, MUTED, true);
+        who.addView(speakerText); who.addView(decision);
+        meta.addView(who,new LinearLayout.LayoutParams(0,-2,1));
         story.addView(meta);
 
         eventTitle = tv("", 24, NAVY, true);
-        eventTitle.setPadding(0, dp(14), 0, dp(6));
+        eventTitle.setPadding(0, dp(12), 0, dp(6));
         story.addView(eventTitle);
 
         eventDesc = tv("", 17, TEXT, false);
@@ -520,11 +741,15 @@ public class MainActivity extends Activity {
         nextButton.setOnClickListener(v -> advanceMonth());
         root.addView(nextButton);
 
+        Button character = outlineButton("👤 کاراکتر من");
+        character.setOnClickListener(v -> showCharacterSheet());
+        root.addView(character);
+
         Button sheet = outlineButton("دارایی‌ها، بدهی‌ها و هدف");
         sheet.setOnClickListener(v -> showBalanceSheet());
         root.addView(sheet);
 
-        Button home = outlineButton("ذخیره و بازگشت به صفحه اول");
+        Button home = outlineButton("ذخیره و بازگشت");
         home.setOnClickListener(v -> {
             state.save(prefs);
             showWelcome();
@@ -532,19 +757,71 @@ public class MainActivity extends Activity {
         root.addView(home);
     }
 
+    private void showCharacterSheet() {
+        String badges=achievementList();
+        String text=
+                "تیپ مالی: "+state.personalityType+
+                "\n"+CharacterSystem.description(state)+
+                "\n\nLevel "+nf.format(CharacterSystem.level(state))+" · "+CharacterSystem.levelTitle(state)+
+                "\nXP: "+nf.format(state.xp)+
+                "\n\nانضباط: "+nf.format(state.discipline)+
+                "\nجسارت: "+nf.format(state.courage)+
+                "\nآرامش: "+nf.format(state.calm)+
+                "\n\nروابط داستانی"+
+                "\nامیر: "+nf.format(state.relAmir)+"/۱۰۰"+
+                "\nسارا: "+nf.format(state.relSara)+"/۱۰۰"+
+                "\nرضا: "+nf.format(state.relReza)+"/۱۰۰"+
+                "\n\nAchievementها ("+nf.format(state.achievementCount())+"/۵)"+
+                "\n"+badges;
+        new AlertDialog.Builder(this)
+                .setTitle("کاراکتر "+safeName())
+                .setMessage(text)
+                .setPositiveButton("بستن",null)
+                .show();
+    }
+
+    private String achievementList() {
+        StringBuilder x=new StringBuilder();
+        if(state.achEmergency)x.append("🛡 صندوق امن\n");
+        if(state.achDebtFree)x.append("⛓ بدون بدهی\n");
+        if(state.achInvestor)x.append("📈 اولین دارایی\n");
+        if(state.achSideIncome)x.append("💼 درآمد دوم\n");
+        if(state.achHealth80)x.append("🏆 سلامت ۸۰\n");
+        if(x.length()==0)x.append("هنوز Achievement باز نشده.");
+        return x.toString().trim();
+    }
+
+    private int npcStyle(String speaker) {
+        if(speaker==null)return 6;
+        if(speaker.contains("سارا"))return 2;
+        if(speaker.contains("امیر"))return 1;
+        if(speaker.contains("رضا"))return 3;
+        if(speaker.contains("مادر")||speaker.contains("خانواده"))return 5;
+        if(speaker.contains("مدیر")||speaker.contains("شرکت"))return 4;
+        return 6;
+    }
+
     private void render() {
         EventData e = events.get((state.month - 1) % events.size());
 
         chapterText.setText(e.chapter != null ? e.chapter : state.chapterTitle());
         monthText.setText("ماه " + nf.format(state.month));
-        playerText.setText(safeName() + "  ·  " + state.profession + "  ·  XP " + nf.format(state.xp));
+        playerText.setText(safeName()+" · "+state.profession);
+        personalityText.setText(state.personalityType+" · سلامت "+nf.format(state.financialHealth())+"/۱۰۰");
+        levelText.setText("Lv."+nf.format(CharacterSystem.level(state))+" · "+CharacterSystem.levelTitle(state)+" · XP "+nf.format(state.xp));
+        playerAvatar.setCharacter(state.avatarStyle,"player");
         storyProgress.setProgress(Math.min(30, state.month));
+
+        missionText.setText(state.currentMission());
+        traitText.setText("انضباط "+nf.format(state.discipline)+"  ·  جسارت "+nf.format(state.courage)+"  ·  آرامش "+nf.format(state.calm));
+        achievementText.setText("🏅 Achievement  "+nf.format(state.achievementCount())+" / ۵");
 
         int health = state.financialHealth();
         healthProgress.setProgress(health);
         healthText.setText(nf.format(health) + " / ۱۰۰");
         if (health < 40) {
             healthText.setBackground(bg(RED, 18));
+            healthText.setTextColor(Color.WHITE);
             healthProgress.setProgressTintList(ColorStateList.valueOf(RED));
         } else if (health < 70) {
             healthText.setBackground(bg(GOLD, 18));
@@ -562,7 +839,9 @@ public class MainActivity extends Activity {
         flowText.setTextColor(cf >= 0 ? GREEN : RED);
         worthText.setText("دارایی خالص\n" + shortMoney(state.netWorth()));
 
-        speakerText.setText(e.speaker == null ? "داستان" : e.speaker);
+        String sp=e.speaker == null ? "داستان" : e.speaker;
+        speakerText.setText(sp);
+        speakerAvatar.setCharacter(npcStyle(sp),sp);
         eventTitle.setText(e.title);
         eventDesc.setText(e.description);
 
@@ -583,7 +862,7 @@ public class MainActivity extends Activity {
             if (lastOutcome != null) {
                 resultText.setText(lastImpact + "\n\nنکته: " + lastOutcome);
             } else {
-                resultText.setText("تصمیمت ثبت شده. نتیجه کامل‌تر این انتخاب در ماه‌های بعد خودش را نشان می‌دهد.");
+                resultText.setText("تصمیمت ثبت شده. بعضی پیامدها در ماه‌های بعد خودشان را نشان می‌دهند.");
             }
             nextButton.setVisibility(View.VISIBLE);
         } else {
@@ -607,26 +886,45 @@ public class MainActivity extends Activity {
         long beforeWorth = state.netWorth();
         long beforeFlow = state.cashFlow();
         int beforeHealth = state.financialHealth();
+        int beforeD=state.discipline, beforeC=state.courage, beforeCalm=state.calm;
 
         String lesson = EventEngine.apply(state, e.id, c.id);
+        CharacterSystem.applyDecision(state,e.id,c.id);
 
         long afterWorth = state.netWorth();
         long afterFlow = state.cashFlow();
         int afterHealth = state.financialHealth();
 
         state.choiceMade = true;
-        state.xp += 10;
-        if (afterHealth >= beforeHealth) state.goodDecisionStreak++;
-        else state.goodDecisionStreak = 0;
+        int earned = 12;
+        if (afterHealth >= beforeHealth) {
+            state.goodDecisionStreak++;
+            earned += Math.min(8,state.goodDecisionStreak);
+        } else {
+            state.goodDecisionStreak = 0;
+        }
+        state.xp += earned;
+
+        String unlocked=state.unlockAchievements();
+        if(!unlocked.isEmpty()) state.xp += 15;
 
         long dw = afterWorth - beforeWorth;
         long df = afterFlow - beforeFlow;
         int dh = afterHealth - beforeHealth;
 
         lastOutcome = lesson;
-        lastImpact = impactLine(dw, df, dh);
+        String traits="صفات: انضباط "+signedInt(state.discipline-beforeD)+
+                " · جسارت "+signedInt(state.courage-beforeC)+
+                " · آرامش "+signedInt(state.calm-beforeCalm)+
+                "\nXP +"+nf.format(earned)+(unlocked.isEmpty()?"":" + ۱۵ جایزه");
+        lastImpact = impactLine(dw, df, dh)+"\n"+traits+
+                (unlocked.isEmpty()?"":"\n\nAchievement جدید!\n"+unlocked);
         state.save(prefs);
         render();
+    }
+
+    private String signedInt(int v){
+        return v>0 ? "+"+nf.format(v) : v<0 ? "−"+nf.format(Math.abs(v)) : "۰";
     }
 
     private String impactLine(long dw, long df, int dh) {
@@ -717,7 +1015,8 @@ public class MainActivity extends Activity {
                 ? state.passiveIncome / (double)state.essentialExpenses() : 0;
 
         String text =
-                "پول نقد: " + money(state.cash) +
+                "🎯 مأموریت: " + state.currentMission() +
+                "\n\nپول نقد: " + money(state.cash) +
                 "\nصندوق اضطراری: " + money(state.emergencyFund) +
                 "\nطلا: " + money(state.gold) +
                 "\nصندوق/سهام: " + money(state.funds) +
@@ -725,13 +1024,12 @@ public class MainActivity extends Activity {
                 "\n\nبدهی کل: " + money(state.debt) +
                 "\nقسط ماهانه: " + money(state.debtPayment) +
                 "\n\nدارایی خالص: " + money(state.netWorth()) +
-                "\nثروت واقعی به قیمت شروع: " + money(state.realNetWorth()) +
-                "\n\nماه‌های صندوق اضطراری: " + String.format(new Locale("fa","IR"), "%.1f", emergencyMonths) +
-                "\nنسبت استقلال مالی: " + String.format(new Locale("fa","IR"), "%.0f%%", fi * 100) +
-                "\n\nهدف بلندمدت: درآمد غیرفعال ≥ هزینه ضروری + صندوق اضطراری حداقل ۶ ماه + بدون بدهی مصرفی سنگین.";
+                "\nثروت واقعی: " + money(state.realNetWorth()) +
+                "\nماه‌های صندوق اضطراری: " + String.format(new Locale("fa","IR"), "%.1f", emergencyMonths) +
+                "\nنسبت استقلال مالی: " + String.format(new Locale("fa","IR"), "%.0f%%", fi * 100);
 
         new AlertDialog.Builder(this)
-                .setTitle("ترازنامه و هدف")
+                .setTitle("ترازنامه و مأموریت")
                 .setMessage(text)
                 .setPositiveButton("بستن", null)
                 .show();

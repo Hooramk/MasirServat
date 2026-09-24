@@ -44,7 +44,8 @@ public class MainActivity extends Activity {
     private String lastOutcome = null;
     private String lastImpact = null;
     private CharacterAvatarView playerAvatar, speakerAvatar;
-    private TextView personalityText, levelText, missionText, traitText, achievementText;
+    private TextView personalityText, levelText, missionText, traitText, achievementText, locationText;
+    private TextView moneyMeter, skillMeter, freedomMeter, socialMeter;
 
     @Override
     public void onCreate(Bundle b) {
@@ -166,7 +167,7 @@ public class MainActivity extends Activity {
         hero.setBackground(heroBg());
         hero.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        TextView season = pill("نسخه ۰.۳ · بازی کاراکتری", NAVY, GOLD);
+        TextView season = pill("نسخه ۰.۴ · Gen Z", NAVY, GOLD);
         LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-2, -2);
         sp.gravity = Gravity.RIGHT;
         season.setLayoutParams(sp);
@@ -185,7 +186,7 @@ public class MainActivity extends Activity {
         LinearLayout introText = new LinearLayout(this);
         introText.setOrientation(LinearLayout.VERTICAL);
         TextView title = tv("مسیر ثروت", 34, Color.WHITE, true);
-        TextView sub = tv("زندگی مالی‌ات را بازی کن؛ نه فقط حسابش کن.", 17, Color.rgb(223,229,236), false);
+        TextView sub = tv("۱۸ سالته؛ آینده‌ات از همین انتخاب‌های کوچک ساخته می‌شود.", 17, Color.rgb(223,229,236), false);
         sub.setPadding(0, dp(7), 0, 0);
         introText.addView(title);
         introText.addView(sub);
@@ -196,7 +197,7 @@ public class MainActivity extends Activity {
         LinearLayout story = card();
         story.addView(tv("تهران، ۱۴۰۵", 16, GOLD, true));
         TextView intro = tv(
-                "کاراکتر خودت را می‌سازی، تیپ مالی‌ات را کشف می‌کنی و در ۳۰ ماه با آدم‌ها، وسوسه‌ها، بحران‌ها و فرصت‌های واقعی روبه‌رو می‌شوی. انتخاب‌ها فقط پولت را تغییر نمی‌دهند؛ شخصیتت هم تغییر می‌کند.",
+                "کاراکتر خودت را می‌سازی و از ۱۸ سالگی وارد یک زندگی ایرانی می‌شوی: دانشگاه، اولین درآمد، گوشی قسطی، فریلنس، سفر، کریپتو، همخانه، مهارت و استقلال. هر انتخاب روی پول، مهارت، آزادی و اعتبار اجتماعی تو اثر دارد.",
                 17, TEXT, false);
         intro.setPadding(0, dp(8), 0, dp(4));
         story.addView(intro);
@@ -625,6 +626,35 @@ public class MainActivity extends Activity {
         mission.addView(missionText);
         root.addView(mission);
 
+        LinearLayout life=card();
+        LinearLayout lifeHead=new LinearLayout(this);
+        lifeHead.setOrientation(LinearLayout.HORIZONTAL);
+        lifeHead.setGravity(Gravity.CENTER_VERTICAL);
+        lifeHead.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        lifeHead.addView(tv("وضعیت زندگی",17,NAVY,true),new LinearLayout.LayoutParams(0,-2,1));
+        TextView vibe=pill(GenZSystem.vibe(state),NAVY,Color.rgb(237,229,208));
+        lifeHead.addView(vibe);
+        life.addView(lifeHead);
+
+        LinearLayout row1=new LinearLayout(this);
+        row1.setOrientation(LinearLayout.HORIZONTAL);
+        row1.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        moneyMeter=lifeMeter("💰","پول");
+        skillMeter=lifeMeter("🧠","مهارت");
+        row1.addView(moneyMeter,new LinearLayout.LayoutParams(0,dp(72),1));
+        row1.addView(skillMeter,new LinearLayout.LayoutParams(0,dp(72),1));
+        life.addView(row1);
+
+        LinearLayout row2=new LinearLayout(this);
+        row2.setOrientation(LinearLayout.HORIZONTAL);
+        row2.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        freedomMeter=lifeMeter("🕊","آزادی");
+        socialMeter=lifeMeter("🔥","اعتبار");
+        row2.addView(freedomMeter,new LinearLayout.LayoutParams(0,dp(72),1));
+        row2.addView(socialMeter,new LinearLayout.LayoutParams(0,dp(72),1));
+        life.addView(row2);
+        root.addView(life);
+
         LinearLayout status = card();
 
         LinearLayout healthRow = new LinearLayout(this);
@@ -674,6 +704,17 @@ public class MainActivity extends Activity {
         root.addView(status);
     }
 
+    private TextView lifeMeter(String icon,String label){
+        TextView v=tv(icon+"  "+label+"\n۰ / ۱۰۰",15,TEXT,true);
+        v.setGravity(Gravity.CENTER);
+        v.setBackground(bg(Color.rgb(247,249,251),14));
+        v.setPadding(dp(6),dp(5),dp(6),dp(5));
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(72),1);
+        p.setMargins(dp(4),dp(5),dp(4),dp(2));
+        v.setLayoutParams(p);
+        return v;
+    }
+
     private TextView statBox(String label, String value) {
         TextView v = tv(label + "\n" + value, 13, TEXT, true);
         v.setGravity(Gravity.CENTER);
@@ -698,20 +739,25 @@ public class MainActivity extends Activity {
         LinearLayout who=new LinearLayout(this);
         who.setOrientation(LinearLayout.VERTICAL);
         speakerText = tv("",16,NAVY,true);
-        TextView decision = tv("تصمیم این ماه", 13, MUTED, true);
-        who.addView(speakerText); who.addView(decision);
+        locationText = tv("",13,GOLD,true);
+        TextView decision = tv("یک پیام برای تو", 12, MUTED, true);
+        who.addView(speakerText);
+        who.addView(locationText);
+        who.addView(decision);
         meta.addView(who,new LinearLayout.LayoutParams(0,-2,1));
         story.addView(meta);
 
-        eventTitle = tv("", 24, NAVY, true);
-        eventTitle.setPadding(0, dp(12), 0, dp(6));
+        eventTitle = tv("", 23, NAVY, true);
+        eventTitle.setPadding(0, dp(10), 0, dp(7));
         story.addView(eventTitle);
 
         eventDesc = tv("", 17, TEXT, false);
+        eventDesc.setPadding(dp(14),dp(12),dp(14),dp(12));
+        eventDesc.setBackground(bg(Color.rgb(241,244,247),16));
         story.addView(eventDesc);
 
-        TextView q = tv("چه کار می‌کنی؟", 15, GOLD, true);
-        q.setPadding(0, dp(18), 0, dp(4));
+        TextView q = tv("پاسخت چیه؟", 15, GOLD, true);
+        q.setPadding(0, dp(17), 0, dp(4));
         story.addView(q);
 
         choicesBox = new LinearLayout(this);
@@ -726,7 +772,7 @@ public class MainActivity extends Activity {
         rp.setMargins(0, dp(14), 0, 0);
         resultCard.setLayoutParams(rp);
 
-        resultTitle = tv("پیامد انتخاب", 16, GREEN, true);
+        resultTitle = tv("بعدش چی شد؟", 16, GREEN, true);
         resultText = tv("", 15, TEXT, false);
         resultText.setPadding(0, dp(5), 0, 0);
         resultCard.addView(resultTitle);
@@ -737,19 +783,23 @@ public class MainActivity extends Activity {
     }
 
     private void buildBottomActions() {
-        nextButton = button("رفتن به ماه بعد  ←", GOLD, NAVY);
+        nextButton = button("ادامه زندگی  ←", GOLD, NAVY);
         nextButton.setOnClickListener(v -> advanceMonth());
         root.addView(nextButton);
 
-        Button character = outlineButton("👤 کاراکتر من");
+        Button map = outlineButton("🗺 نقشه زندگی");
+        map.setOnClickListener(v -> showCityMap());
+        root.addView(map);
+
+        Button character = outlineButton("👤 پروفایل من");
         character.setOnClickListener(v -> showCharacterSheet());
         root.addView(character);
 
-        Button sheet = outlineButton("دارایی‌ها، بدهی‌ها و هدف");
+        Button sheet = outlineButton("💳 کیف پول و دارایی‌ها");
         sheet.setOnClickListener(v -> showBalanceSheet());
         root.addView(sheet);
 
-        Button home = outlineButton("ذخیره و بازگشت");
+        Button home = outlineButton("ذخیره و خروج");
         home.setOnClickListener(v -> {
             state.save(prefs);
             showWelcome();
@@ -757,24 +807,76 @@ public class MainActivity extends Activity {
         root.addView(home);
     }
 
+    private void showCityMap() {
+        ScrollView sc=new ScrollView(this);
+        LinearLayout box=new LinearLayout(this);
+        basePage(sc,box);
+
+        LinearLayout hero=new LinearLayout(this);
+        hero.setOrientation(LinearLayout.VERTICAL);
+        hero.setPadding(dp(18),dp(20),dp(18),dp(20));
+        hero.setBackground(heroBg());
+        hero.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        hero.addView(tv("🗺 نقشه زندگی",29,Color.WHITE,true));
+        hero.addView(tv("تهران ۱۴۰"+nf.format(state.persianYear()%10)+" · "+nf.format(state.age())+" سالگی",15,Color.rgb(220,228,236),false));
+        box.addView(hero);
+
+        EventData current=events.get((state.month-1)%events.size());
+        String[] names={"خانه","دانشگاه","محل کار","کافه","فروشگاه","بانک","باشگاه","آنلاین"};
+        String[] icons={"🏠","🎓","💼","☕","🛍","🏦","🏋","📱"};
+        for(int i=0;i<names.length;i++){
+            final String name=names[i];
+            boolean active=name.equals(current.location);
+            LinearLayout place=card();
+            place.setBackground(active?bordered(Color.rgb(255,249,232),18,GOLD):bg(Color.WHITE,18));
+            LinearLayout row=new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            TextView icon=tv(icons[i],28,NAVY,true);
+            icon.setGravity(Gravity.CENTER);
+            row.addView(icon,new LinearLayout.LayoutParams(dp(58),dp(58)));
+            LinearLayout txt=new LinearLayout(this);
+            txt.setOrientation(LinearLayout.VERTICAL);
+            txt.addView(tv(name,18,NAVY,true));
+            txt.addView(tv(active?"اتفاق این ماه اینجاست":"رویدادهای این لوکیشن در طول داستان باز می‌شوند",13,active?GOLD:MUTED,false));
+            row.addView(txt,new LinearLayout.LayoutParams(0,-2,1));
+            place.addView(row);
+            place.setOnClickListener(v -> Toast.makeText(this,active?"الان اینجایی":"بعداً اتفاق‌های اینجا را می‌بینی",Toast.LENGTH_SHORT).show());
+            box.addView(place);
+        }
+
+        Button back=button("برگشت به داستان",GOLD,NAVY);
+        back.setOnClickListener(v -> showGame());
+        box.addView(back);
+        setContentView(sc);
+    }
+
     private void showCharacterSheet() {
         String badges=achievementList();
         String text=
-                "تیپ مالی: "+state.personalityType+
-                "\n"+CharacterSystem.description(state)+
+                "سن: "+nf.format(state.age())+" سال · سال "+nf.format(state.persianYear())+
+                "\nمسیر: "+state.profession+
+                "\nتیپ مالی: "+state.personalityType+
+                "\nاستایل زندگی: "+GenZSystem.vibe(state)+
+                "\n\n💰 پول: "+nf.format(state.moneyScore())+"/۱۰۰"+
+                "\n🧠 مهارت: "+nf.format(state.skill)+"/۱۰۰"+
+                "\n🕊 آزادی: "+nf.format(state.freedom)+"/۱۰۰"+
+                "\n🔥 اعتبار اجتماعی: "+nf.format(state.social)+"/۱۰۰"+
                 "\n\nLevel "+nf.format(CharacterSystem.level(state))+" · "+CharacterSystem.levelTitle(state)+
                 "\nXP: "+nf.format(state.xp)+
-                "\n\nانضباط: "+nf.format(state.discipline)+
+                "\n\nصفات شخصیتی"+
+                "\nانضباط: "+nf.format(state.discipline)+
                 "\nجسارت: "+nf.format(state.courage)+
                 "\nآرامش: "+nf.format(state.calm)+
-                "\n\nروابط داستانی"+
+                "\n\nروابط"+
                 "\nامیر: "+nf.format(state.relAmir)+"/۱۰۰"+
                 "\nسارا: "+nf.format(state.relSara)+"/۱۰۰"+
                 "\nرضا: "+nf.format(state.relReza)+"/۱۰۰"+
                 "\n\nAchievementها ("+nf.format(state.achievementCount())+"/۵)"+
                 "\n"+badges;
         new AlertDialog.Builder(this)
-                .setTitle("کاراکتر "+safeName())
+                .setTitle("پروفایل "+safeName())
                 .setMessage(text)
                 .setPositiveButton("بستن",null)
                 .show();
@@ -805,9 +907,10 @@ public class MainActivity extends Activity {
         EventData e = events.get((state.month - 1) % events.size());
 
         chapterText.setText(e.chapter != null ? e.chapter : state.chapterTitle());
-        monthText.setText("ماه " + nf.format(state.month));
-        playerText.setText(safeName()+" · "+state.profession);
-        personalityText.setText(state.personalityType+" · سلامت "+nf.format(state.financialHealth())+"/۱۰۰");
+        int monthOfYear=((state.month-1)%12)+1;
+        monthText.setText(nf.format(state.persianYear())+" · ماه "+nf.format(monthOfYear));
+        playerText.setText(safeName()+" · "+nf.format(state.age())+" ساله");
+        personalityText.setText(state.profession+" · "+state.personalityType+" · "+GenZSystem.vibe(state));
         levelText.setText("Lv."+nf.format(CharacterSystem.level(state))+" · "+CharacterSystem.levelTitle(state)+" · XP "+nf.format(state.xp));
         playerAvatar.setCharacter(state.avatarStyle,"player");
         storyProgress.setProgress(Math.min(30, state.month));
@@ -815,6 +918,11 @@ public class MainActivity extends Activity {
         missionText.setText(state.currentMission());
         traitText.setText("انضباط "+nf.format(state.discipline)+"  ·  جسارت "+nf.format(state.courage)+"  ·  آرامش "+nf.format(state.calm));
         achievementText.setText("🏅 Achievement  "+nf.format(state.achievementCount())+" / ۵");
+
+        moneyMeter.setText("💰  پول\n"+nf.format(state.moneyScore())+" / ۱۰۰");
+        skillMeter.setText("🧠  مهارت\n"+nf.format(state.skill)+" / ۱۰۰");
+        freedomMeter.setText("🕊  آزادی\n"+nf.format(state.freedom)+" / ۱۰۰");
+        socialMeter.setText("🔥  اعتبار\n"+nf.format(state.social)+" / ۱۰۰");
 
         int health = state.financialHealth();
         healthProgress.setProgress(health);
@@ -841,13 +949,14 @@ public class MainActivity extends Activity {
 
         String sp=e.speaker == null ? "داستان" : e.speaker;
         speakerText.setText(sp);
+        locationText.setText("📍 "+(e.location==null?"تهران":e.location));
         speakerAvatar.setCharacter(npcStyle(sp),sp);
         eventTitle.setText(e.title);
         eventDesc.setText(e.description);
 
         choicesBox.removeAllViews();
         for (EventData.Choice c : e.choices) {
-            Button b = outlineButton(c.title);
+            Button b = outlineButton("↩  "+c.title);
             b.setTextSize(15);
             if (state.choiceMade) {
                 b.setEnabled(false);
@@ -860,7 +969,7 @@ public class MainActivity extends Activity {
         if (state.choiceMade) {
             resultCard.setVisibility(View.VISIBLE);
             if (lastOutcome != null) {
-                resultText.setText(lastImpact + "\n\nنکته: " + lastOutcome);
+                resultText.setText(lastImpact + "\n\nیاد گرفتی: " + lastOutcome);
             } else {
                 resultText.setText("تصمیمت ثبت شده. بعضی پیامدها در ماه‌های بعد خودشان را نشان می‌دهند.");
             }
@@ -887,9 +996,11 @@ public class MainActivity extends Activity {
         long beforeFlow = state.cashFlow();
         int beforeHealth = state.financialHealth();
         int beforeD=state.discipline, beforeC=state.courage, beforeCalm=state.calm;
+        int beforeSkill=state.skill, beforeFreedom=state.freedom, beforeSocial=state.social;
 
         String lesson = EventEngine.apply(state, e.id, c.id);
         CharacterSystem.applyDecision(state,e.id,c.id);
+        GenZSystem.applyChoice(state,e.id,c.id);
 
         long afterWorth = state.netWorth();
         long afterFlow = state.cashFlow();
@@ -903,6 +1014,7 @@ public class MainActivity extends Activity {
         } else {
             state.goodDecisionStreak = 0;
         }
+        if(state.skill>beforeSkill) earned+=2;
         state.xp += earned;
 
         String unlocked=state.unlockAchievements();
@@ -913,11 +1025,14 @@ public class MainActivity extends Activity {
         int dh = afterHealth - beforeHealth;
 
         lastOutcome = lesson;
-        String traits="صفات: انضباط "+signedInt(state.discipline-beforeD)+
+        String life="زندگی: مهارت "+signedInt(state.skill-beforeSkill)+
+                " · آزادی "+signedInt(state.freedom-beforeFreedom)+
+                " · اعتبار "+signedInt(state.social-beforeSocial);
+        String traits="شخصیت: انضباط "+signedInt(state.discipline-beforeD)+
                 " · جسارت "+signedInt(state.courage-beforeC)+
                 " · آرامش "+signedInt(state.calm-beforeCalm)+
                 "\nXP +"+nf.format(earned)+(unlocked.isEmpty()?"":" + ۱۵ جایزه");
-        lastImpact = impactLine(dw, df, dh)+"\n"+traits+
+        lastImpact = impactLine(dw, df, dh)+"\n"+life+"\n"+traits+
                 (unlocked.isEmpty()?"":"\n\nAchievement جدید!\n"+unlocked);
         state.save(prefs);
         render();

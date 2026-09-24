@@ -22,6 +22,24 @@ public class GameState {
     public int social = 50;
     public int storyFlags = 0;
 
+    // v0.6 real gameplay loop
+    public int loopVersion = 0;
+    public int week = 1;
+    public int energy = 5;
+    public int maxEnergy = 5;
+    public int roomLevel = 1;
+    public int laptopLevel = 0;
+    public int phoneLevel = 1;
+    public int transportLevel = 0;
+    public int careerLevel = 1;
+    public int workXp = 0;
+    public int followers = 120;
+    public int mood = 72;
+    public int focus = 65;
+    public int weeklyActions = 0;
+    public boolean restedThisWeek = false;
+    public long savings = 0L;
+
     public boolean achEmergency = false;
     public boolean achDebtFree = false;
     public boolean achInvestor = false;
@@ -54,24 +72,88 @@ public class GameState {
     public void applyProfile(String p) {
         profession = p;
         profileChosen = true;
-        if ("فریلنسر".equals(p)) {
-            salary = 0;
-            sideIncome = 42_000_000L;
-            cash = 75_000_000L;
-            emergencyFund = 20_000_000L;
-            housing = 13_000_000L;
-            discretionary = 7_000_000L;
-        } else if ("صاحب کسب‌وکار".equals(p)) {
-            salary = 0;
-            sideIncome = 55_000_000L;
-            cash = 110_000_000L;
-            emergencyFund = 25_000_000L;
-            business = 45_000_000L;
-            housing = 15_000_000L;
-            discretionary = 9_000_000L;
+        initLifeGame();
+        if ("کارآموز".equals(p)) {
+            cash = 18_000_000L;
+            salary = 14_000_000L;
+            skill = Math.max(skill, 38);
+            focus = 72;
+        } else if ("فریلنسر تازه‌کار".equals(p)) {
+            cash = 22_000_000L;
+            salary = 0L;
+            sideIncome = 10_000_000L;
+            skill = Math.max(skill, 42);
+            freedom = Math.max(freedom, 52);
+            laptopLevel = 1;
         } else {
-            profession = "کارمند";
+            profession = "دانشجو";
+            cash = 15_000_000L;
+            salary = 0L;
+            sideIncome = 3_000_000L;
+            skill = Math.max(skill, 34);
+            social = Math.max(social, 55);
         }
+    }
+
+    public void initLifeGame() {
+        loopVersion = 6;
+        week = 1;
+        energy = 5;
+        maxEnergy = 5;
+        roomLevel = 1;
+        laptopLevel = 0;
+        phoneLevel = 1;
+        transportLevel = 0;
+        careerLevel = 1;
+        workXp = 0;
+        followers = 120;
+        mood = 72;
+        focus = 65;
+        weeklyActions = 0;
+        restedThisWeek = false;
+        savings = 0L;
+
+        cash = 15_000_000L;
+        salary = 0L;
+        sideIncome = 3_000_000L;
+        passiveIncome = 0L;
+        housing = 0L;
+        food = 2_500_000L;
+        transport = 1_500_000L;
+        utilities = 600_000L;
+        health = 400_000L;
+        discretionary = 1_500_000L;
+        debt = 0L;
+        debtPayment = 0L;
+        debtMonthsLeft = 0;
+        emergencyFund = 0L;
+        gold = 0L;
+        funds = 0L;
+        business = 0L;
+        headlineIndex = 1.0;
+        month = 1;
+        xp = 0;
+        goodDecisionStreak = 0;
+        choiceMade = false;
+        storyFlags = 0;
+    }
+
+    public long weeklyBaseCost() {
+        long base = 850_000L + 350_000L * roomLevel;
+        if ("دانشجو".equals(profession)) base += 450_000L;
+        else if ("کارآموز".equals(profession)) base += 700_000L;
+        else base += 900_000L;
+        if (transportLevel == 0) base += 450_000L;
+        return base;
+    }
+
+    public String loopMission() {
+        if (laptopLevel == 0) return "برای خرید اولین لپ‌تاپ کاری پول جمع کن.";
+        if (skill < 45) return "مهارتت را به ۴۵ برسان و فریلنس را باز کن.";
+        if (savings < 10_000_000L) return "۱۰ میلیون تومان صندوق امن بساز.";
+        if (followers < 1000) return "پیجت را به ۱۰۰۰ فالوئر برسان.";
+        if (careerLevel < 3) return "سطح شغلی‌ات را به ۳ برسان.";
+        return "دارایی مولد بساز و آزادی مالی‌ات را بالا ببر.";
     }
 
     public int age() { return 18 + Math.max(0, month - 1) / 12; }
@@ -205,6 +287,11 @@ public class GameState {
                 .putInt("discipline",discipline).putInt("courage",courage).putInt("calm",calm)
                 .putInt("relAmir",relAmir).putInt("relSara",relSara).putInt("relReza",relReza)
                 .putInt("skill",skill).putInt("freedom",freedom).putInt("social",social).putInt("storyFlags",storyFlags)
+                .putInt("loopVersion",loopVersion).putInt("week",week).putInt("energy",energy).putInt("maxEnergy",maxEnergy)
+                .putInt("roomLevel",roomLevel).putInt("laptopLevel",laptopLevel).putInt("phoneLevel",phoneLevel)
+                .putInt("transportLevel",transportLevel).putInt("careerLevel",careerLevel).putInt("workXp",workXp)
+                .putInt("followers",followers).putInt("mood",mood).putInt("focus",focus).putInt("weeklyActions",weeklyActions)
+                .putBoolean("restedThisWeek",restedThisWeek).putLong("savings",savings)
                 .putBoolean("achEmergency",achEmergency).putBoolean("achDebtFree",achDebtFree).putBoolean("achInvestor",achInvestor)
                 .putBoolean("achSideIncome",achSideIncome).putBoolean("achHealth80",achHealth80)
                 .putLong("cash", cash).putLong("salary", salary).putLong("sideIncome", sideIncome)
@@ -237,6 +324,22 @@ public class GameState {
         s.freedom=p.getInt("freedom",42);
         s.social=p.getInt("social",50);
         s.storyFlags=p.getInt("storyFlags",0);
+        s.loopVersion=p.getInt("loopVersion",0);
+        s.week=p.getInt("week",1);
+        s.energy=p.getInt("energy",5);
+        s.maxEnergy=p.getInt("maxEnergy",5);
+        s.roomLevel=p.getInt("roomLevel",1);
+        s.laptopLevel=p.getInt("laptopLevel",0);
+        s.phoneLevel=p.getInt("phoneLevel",1);
+        s.transportLevel=p.getInt("transportLevel",0);
+        s.careerLevel=p.getInt("careerLevel",1);
+        s.workXp=p.getInt("workXp",0);
+        s.followers=p.getInt("followers",120);
+        s.mood=p.getInt("mood",72);
+        s.focus=p.getInt("focus",65);
+        s.weeklyActions=p.getInt("weeklyActions",0);
+        s.restedThisWeek=p.getBoolean("restedThisWeek",false);
+        s.savings=p.getLong("savings",0L);
         s.achEmergency=p.getBoolean("achEmergency",false);
         s.achDebtFree=p.getBoolean("achDebtFree",false);
         s.achInvestor=p.getBoolean("achInvestor",false);

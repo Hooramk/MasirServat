@@ -1281,55 +1281,173 @@ public class MainActivity extends Activity {
     }
 
     private void showEnding() {
-        ScrollView sc = new ScrollView(this);
-        LinearLayout box = new LinearLayout(this);
-        basePage(sc, box);
+        ScrollView sc=new ScrollView(this);
+        LinearLayout box=new LinearLayout(this);
+        basePage(sc,box);
 
-        LinearLayout hero = new LinearLayout(this);
-        hero.setOrientation(LinearLayout.VERTICAL);
-        hero.setPadding(dp(22), dp(30), dp(22), dp(30));
+        // Final cinematic header
+        LinearLayout hero=new LinearLayout(this);
+        hero.setOrientation(LinearLayout.HORIZONTAL);
+        hero.setGravity(Gravity.CENTER_VERTICAL);
+        hero.setPadding(dp(18),dp(22),dp(18),dp(22));
         hero.setBackground(heroBg());
         hero.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        hero.addView(pill("پایان فصل اول", NAVY, GOLD));
-        hero.addView(spacer(18));
-        hero.addView(tv(safeName() + "، ۳۰ ماه گذشت.", 29, Color.WHITE, true));
+        CharacterAvatarView av=new CharacterAvatarView(this);
+        av.setCharacter(state.avatarStyle,"player");
+        hero.addView(av,new LinearLayout.LayoutParams(dp(118),dp(142)));
 
-        TextView end = tv(
-                "تو همه‌چیز را درست انجام ندادی — و قرار هم نبود انجام بدهی. چیزی که ساختی، الگوی تصمیم‌گیری خودت بود. حالا می‌توانی ببینی پولت زیر فشار تورم، بدهی، فرصت و سبک زندگی چه مسیری طی کرده.",
-                17, Color.rgb(225,232,239), false);
-        end.setPadding(0, dp(12), 0, 0);
-        hero.addView(end);
+        LinearLayout htxt=new LinearLayout(this);
+        htxt.setOrientation(LinearLayout.VERTICAL);
+        htxt.addView(pill("نتیجه نهایی فصل اول",NAVY,GOLD));
+        TextView h1=tv(EndingEvaluator.title(state),27,Color.WHITE,true);
+        h1.setPadding(0,dp(10),0,dp(5));
+        htxt.addView(h1);
+        TextView h2=tv(EndingEvaluator.oneLine(state),15,Color.rgb(222,230,238),false);
+        htxt.addView(h2);
+        hero.addView(htxt,new LinearLayout.LayoutParams(0,-2,1));
         box.addView(hero);
 
-        LinearLayout score = card();
-        int h = state.financialHealth();
-        String rank = h >= 80 ? "باثبات و آماده رشد" : h >= 60 ? "رو به رشد" : h >= 40 ? "شکننده اما قابل اصلاح" : "نیازمند بازسازی";
-        score.addView(tv("نتیجه این فصل", 20, NAVY, true));
-        TextView summary = tv(
-                "وضعیت مالی: " + rank +
-                "\nسلامت مالی: " + nf.format(h) + " از ۱۰۰" +
-                "\nدارایی خالص: " + money(state.netWorth()) +
-                "\nثروت واقعی: " + money(state.realNetWorth()) +
-                "\nXP: " + nf.format(state.xp),
-                17, TEXT, false);
-        summary.setPadding(0, dp(9), 0, 0);
-        score.addView(summary);
+        // Overall life score
+        LinearLayout score=card();
+        int life=EndingEvaluator.lifeScore(state);
+        TextView scoreTitle=tv("امتیاز مسیر تو",19,NAVY,true);
+        score.addView(scoreTitle);
+
+        TextView big=tv(nf.format(life)+" / ۱۰۰",34,GOLD,true);
+        big.setGravity(Gravity.CENTER);
+        big.setPadding(0,dp(8),0,dp(4));
+        score.addView(big);
+
+        ProgressBar total=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
+        total.setMax(100);
+        total.setProgress(life);
+        total.setProgressTintList(ColorStateList.valueOf(GOLD));
+        total.setProgressBackgroundTintList(ColorStateList.valueOf(Color.rgb(232,235,238)));
+        LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,dp(9));
+        tp.setMargins(0,dp(3),0,dp(12));
+        total.setLayoutParams(tp);
+        score.addView(total);
+
+        LinearLayout row1=new LinearLayout(this);
+        row1.setOrientation(LinearLayout.HORIZONTAL);
+        row1.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        row1.addView(endingMetric("💰","پول",state.moneyScore()),new LinearLayout.LayoutParams(0,dp(76),1));
+        row1.addView(endingMetric("🧠","مهارت",state.skill),new LinearLayout.LayoutParams(0,dp(76),1));
+        score.addView(row1);
+
+        LinearLayout row2=new LinearLayout(this);
+        row2.setOrientation(LinearLayout.HORIZONTAL);
+        row2.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        row2.addView(endingMetric("🕊","آزادی",state.freedom),new LinearLayout.LayoutParams(0,dp(76),1));
+        row2.addView(endingMetric("🔥","اعتبار",state.social),new LinearLayout.LayoutParams(0,dp(76),1));
+        score.addView(row2);
+
         box.addView(score);
 
-        Button replay = button("شروع داستان جدید", GOLD, NAVY);
+        // Financial reality
+        LinearLayout finance=card();
+        finance.addView(tv("واقعیت مالی پایان بازی",19,NAVY,true));
+        double emergencyMonths=state.essentialExpenses()>0
+                ? state.emergencyFund/(double)state.essentialExpenses():0;
+        double independence=state.essentialExpenses()>0
+                ? state.passiveIncome/(double)state.essentialExpenses():0;
+        TextView ft=tv(
+                "سن پایان فصل: "+nf.format(state.age())+" سال"+
+                "\nدارایی خالص: "+money(state.netWorth())+
+                "\nثروت واقعی به قیمت شروع: "+money(state.realNetWorth())+
+                "\nجریان نقدی ماهانه: "+money(state.cashFlow())+
+                "\nبدهی باقی‌مانده: "+money(state.debt)+
+                "\nصندوق اضطراری: "+String.format(new Locale("fa","IR"),"%.1f ماه",emergencyMonths)+
+                "\nنسبت استقلال مالی: "+String.format(new Locale("fa","IR"),"%.0f%%",independence*100),
+                16,TEXT,false);
+        ft.setPadding(0,dp(8),0,0);
+        finance.addView(ft);
+        box.addView(finance);
+
+        // Strengths
+        LinearLayout strengths=card();
+        strengths.addView(tv("چیزی که خوب ساختی",18,GREEN,true));
+        TextView st=tv(EndingEvaluator.strengths(state),16,TEXT,false);
+        st.setPadding(0,dp(7),0,0);
+        strengths.addView(st);
+        box.addView(strengths);
+
+        // Risks / warnings
+        LinearLayout warnings=card();
+        warnings.addView(tv("جایی که باید حواست باشد",18,RED,true));
+        TextView wt=tv("• "+EndingEvaluator.warnings(state),16,TEXT,false);
+        wt.setPadding(0,dp(7),0,0);
+        warnings.addView(wt);
+        box.addView(warnings);
+
+        // Choice footprint
+        LinearLayout footprint=card();
+        footprint.addView(tv("ردپای انتخاب‌های مهم تو",18,NAVY,true));
+        TextView fp=tv(EndingEvaluator.footprint(state),15,TEXT,false);
+        fp.setPadding(0,dp(8),0,0);
+        footprint.addView(fp);
+        box.addView(footprint);
+
+        // Character evolution
+        LinearLayout character=card();
+        character.addView(tv("کاراکترت در پایان چه شکلی شد؟",18,NAVY,true));
+        TextView ct=tv(
+                state.personalityType+" → "+GenZSystem.vibe(state)+
+                "\n\nانضباط: "+nf.format(state.discipline)+"/۱۰۰"+
+                "\nجسارت: "+nf.format(state.courage)+"/۱۰۰"+
+                "\nآرامش: "+nf.format(state.calm)+"/۱۰۰"+
+                "\nLevel: "+nf.format(CharacterSystem.level(state))+" · "+CharacterSystem.levelTitle(state)+
+                "\nAchievement: "+nf.format(state.achievementCount())+" از ۵",
+                16,TEXT,false);
+        ct.setPadding(0,dp(8),0,0);
+        character.addView(ct);
+        box.addView(character);
+
+        // Future letter
+        LinearLayout future=card();
+        future.setBackground(bordered(Color.rgb(255,250,235),18,GOLD));
+        future.addView(tv("نامه‌ای از خودِ آینده‌ات",19,GOLD,true));
+        TextView letter=tv("«"+EndingEvaluator.futureMessage(state)+"»",17,TEXT,false);
+        letter.setPadding(0,dp(9),0,0);
+        future.addView(letter);
+        box.addView(future);
+
+        TextView replayHint=tv(
+                "این پایان قطعی نیست. اگر دوباره بازی کنی و انتخاب‌های متفاوت داشته باشی، عنوان پایان، امتیازها و حتی بعضی پیامدهای داستان عوض می‌شوند.",
+                14,MUTED,false);
+        replayHint.setGravity(Gravity.CENTER);
+        replayHint.setPadding(dp(8),dp(9),dp(8),dp(9));
+        box.addView(replayHint);
+
+        Button replay=button("🔁 شروع زندگی جدید با انتخاب‌های متفاوت",GOLD,NAVY);
         replay.setOnClickListener(v -> {
             prefs.edit().clear().apply();
-            state = new GameState();
-            pendingProfile = "کارمند";
+            state=new GameState();
+            pendingProfile="کارمند";
+            pendingAvatar=1;
             showSetup();
         });
         box.addView(replay);
 
-        Button home = outlineButton("صفحه اول");
+        Button profileBtn=outlineButton("👤 مرور پروفایل نهایی");
+        profileBtn.setOnClickListener(v -> showCharacterSheet());
+        box.addView(profileBtn);
+
+        Button home=outlineButton("صفحه اول");
         home.setOnClickListener(v -> showWelcome());
         box.addView(home);
 
         setContentView(sc);
+    }
+
+    private TextView endingMetric(String icon,String label,int value){
+        TextView v=tv(icon+"  "+label+"\n"+nf.format(value)+" / ۱۰۰",15,TEXT,true);
+        v.setGravity(Gravity.CENTER);
+        v.setBackground(bg(Color.rgb(247,249,251),14));
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(76),1);
+        p.setMargins(dp(4),dp(4),dp(4),dp(4));
+        v.setLayoutParams(p);
+        return v;
     }
 }

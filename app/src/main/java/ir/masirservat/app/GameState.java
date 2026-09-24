@@ -17,6 +17,10 @@ public class GameState {
     public int relSara = 50;
     public int relReza = 50;
 
+    public int skill = 35;
+    public int freedom = 42;
+    public int social = 50;
+
     public boolean achEmergency = false;
     public boolean achDebtFree = false;
     public boolean achInvestor = false;
@@ -68,6 +72,10 @@ public class GameState {
             profession = "کارمند";
         }
     }
+
+    public int age() { return 18 + Math.max(0, month - 1) / 12; }
+    public int persianYear() { return 1405 + Math.max(0, month - 1) / 12; }
+    public int moneyScore() { return financialHealth(); }
 
     public long monthlyIncome() { return salary + sideIncome + passiveIncome; }
     public long monthlyExpenses() { return housing + food + transport + utilities + health + discretionary + debtPayment; }
@@ -192,6 +200,7 @@ public class GameState {
                 .putInt("avatarStyle",avatarStyle).putString("personalityType",personalityType).putBoolean("personalityChosen",personalityChosen)
                 .putInt("discipline",discipline).putInt("courage",courage).putInt("calm",calm)
                 .putInt("relAmir",relAmir).putInt("relSara",relSara).putInt("relReza",relReza)
+                .putInt("skill",skill).putInt("freedom",freedom).putInt("social",social)
                 .putBoolean("achEmergency",achEmergency).putBoolean("achDebtFree",achDebtFree).putBoolean("achInvestor",achInvestor)
                 .putBoolean("achSideIncome",achSideIncome).putBoolean("achHealth80",achHealth80)
                 .putLong("cash", cash).putLong("salary", salary).putLong("sideIncome", sideIncome)
@@ -220,6 +229,9 @@ public class GameState {
         s.relAmir=p.getInt("relAmir",50);
         s.relSara=p.getInt("relSara",50);
         s.relReza=p.getInt("relReza",50);
+        s.skill=p.getInt("skill",35);
+        s.freedom=p.getInt("freedom",42);
+        s.social=p.getInt("social",50);
         s.achEmergency=p.getBoolean("achEmergency",false);
         s.achDebtFree=p.getBoolean("achDebtFree",false);
         s.achInvestor=p.getBoolean("achInvestor",false);

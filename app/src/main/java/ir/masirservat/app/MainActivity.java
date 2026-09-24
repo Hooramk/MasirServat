@@ -175,7 +175,7 @@ public class MainActivity extends Activity {
         hero.setBackground(heroBg());
         hero.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        TextView season = pill("نسخه ۰.۴ · Gen Z", NAVY, GOLD);
+        TextView season = pill("نسخه ۰.۵ · Visual Story", NAVY, GOLD);
         LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-2, -2);
         sp.gravity = Gravity.RIGHT;
         season.setLayoutParams(sp);

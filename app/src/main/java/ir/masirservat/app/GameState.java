@@ -3,6 +3,10 @@ package ir.masirservat.app;
 import android.content.SharedPreferences;
 
 public class GameState {
+    public String playerName = "";
+    public String profession = "";
+    public boolean profileChosen = false;
+
     public long cash = 60_000_000L;
     public long salary = 35_000_000L;
     public long sideIncome = 0L;
@@ -22,7 +26,32 @@ public class GameState {
     public long business = 0L;
     public double headlineIndex = 1.0;
     public int month = 1;
+    public int xp = 0;
+    public int goodDecisionStreak = 0;
     public boolean choiceMade = false;
+
+    public void applyProfile(String p) {
+        profession = p;
+        profileChosen = true;
+        if ("فریلنسر".equals(p)) {
+            salary = 0;
+            sideIncome = 42_000_000L;
+            cash = 75_000_000L;
+            emergencyFund = 20_000_000L;
+            housing = 13_000_000L;
+            discretionary = 7_000_000L;
+        } else if ("صاحب کسب‌وکار".equals(p)) {
+            salary = 0;
+            sideIncome = 55_000_000L;
+            cash = 110_000_000L;
+            emergencyFund = 25_000_000L;
+            business = 45_000_000L;
+            housing = 15_000_000L;
+            discretionary = 9_000_000L;
+        } else {
+            profession = "کارمند";
+        }
+    }
 
     public long monthlyIncome() { return salary + sideIncome + passiveIncome; }
     public long monthlyExpenses() { return housing + food + transport + utilities + health + discretionary + debtPayment; }
@@ -31,6 +60,29 @@ public class GameState {
     public long realNetWorth() { return Math.round(netWorth() / headlineIndex); }
     public long cashFlow() { return monthlyIncome() - monthlyExpenses(); }
     public double purchasingPower() { return 100.0 / headlineIndex; }
+
+    public int financialHealth() {
+        long essential = Math.max(1, essentialExpenses());
+        double emergencyMonths = emergencyFund / (double) essential;
+        double savings = monthlyIncome() > 0 ? cashFlow() / (double) monthlyIncome() : -1;
+        double debtRatio = monthlyIncome() > 0 ? debtPayment / (double) monthlyIncome() : (debt > 0 ? 1 : 0);
+        int score = 45;
+        score += (int)Math.round(Math.min(25, emergencyMonths * 5));
+        score += (int)Math.round(Math.max(-20, Math.min(20, savings * 100)));
+        score -= (int)Math.round(Math.min(25, debtRatio * 100));
+        if (netWorth() > 0) score += 5;
+        return Math.max(0, Math.min(100, score));
+    }
+
+    public String chapterTitle() {
+        int m = Math.max(1, month);
+        if (m <= 5) return "فصل ۱ · شروع استقلال";
+        if (m <= 10) return "فصل ۲ · فشار تورم";
+        if (m <= 15) return "فصل ۳ · انتخاب‌های سخت";
+        if (m <= 20) return "فصل ۴ · بحران و فرصت";
+        if (m <= 25) return "فصل ۵ · ساختن دارایی";
+        return "فصل ۶ · بازی بلندمدت";
+    }
 
     public void settleMonth() {
         cash += monthlyIncome() - monthlyExpenses();
@@ -67,6 +119,7 @@ public class GameState {
 
     public void save(SharedPreferences p) {
         p.edit()
+                .putString("playerName", playerName).putString("profession", profession).putBoolean("profileChosen", profileChosen)
                 .putLong("cash", cash).putLong("salary", salary).putLong("sideIncome", sideIncome)
                 .putLong("passiveIncome", passiveIncome).putLong("housing", housing).putLong("food", food)
                 .putLong("transport", transport).putLong("utilities", utilities).putLong("health", health)
@@ -74,12 +127,16 @@ public class GameState {
                 .putInt("debtMonthsLeft", debtMonthsLeft).putLong("emergencyFund", emergencyFund)
                 .putLong("gold", gold).putLong("funds", funds).putLong("business", business)
                 .putLong("headlineIndexBits", Double.doubleToRawLongBits(headlineIndex)).putInt("month", month)
+                .putInt("xp", xp).putInt("goodDecisionStreak", goodDecisionStreak)
                 .putBoolean("choiceMade", choiceMade).apply();
     }
 
     public static GameState load(SharedPreferences p) {
         GameState s = new GameState();
         if (!p.contains("month")) return s;
+        s.playerName=p.getString("playerName","");
+        s.profession=p.getString("profession","");
+        s.profileChosen=p.getBoolean("profileChosen",false);
         s.cash=p.getLong("cash",s.cash); s.salary=p.getLong("salary",s.salary); s.sideIncome=p.getLong("sideIncome",0);
         s.passiveIncome=p.getLong("passiveIncome",0); s.housing=p.getLong("housing",s.housing); s.food=p.getLong("food",s.food);
         s.transport=p.getLong("transport",s.transport); s.utilities=p.getLong("utilities",s.utilities); s.health=p.getLong("health",s.health);
@@ -87,7 +144,8 @@ public class GameState {
         s.debtMonthsLeft=p.getInt("debtMonthsLeft",0); s.emergencyFund=p.getLong("emergencyFund",s.emergencyFund);
         s.gold=p.getLong("gold",0); s.funds=p.getLong("funds",0); s.business=p.getLong("business",0);
         s.headlineIndex=Double.longBitsToDouble(p.getLong("headlineIndexBits",Double.doubleToRawLongBits(1.0)));
-        s.month=p.getInt("month",1); s.choiceMade=p.getBoolean("choiceMade",false);
+        s.month=p.getInt("month",1); s.xp=p.getInt("xp",0); s.goodDecisionStreak=p.getInt("goodDecisionStreak",0);
+        s.choiceMade=p.getBoolean("choiceMade",false);
         return s;
     }
 }

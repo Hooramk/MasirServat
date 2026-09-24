@@ -3,7 +3,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EventData {
-    public String id, chapter, speaker, title, description;
+    public String id, chapter, speaker, location, title, description;
     public List<Choice> choices = new ArrayList<>();
 
     public static class Choice {

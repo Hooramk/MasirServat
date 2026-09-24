@@ -72,8 +72,13 @@ public class EventEngine {
                 else { long x=s.essentialExpenses(); s.debt+=x; s.debtPayment+=Math.max(1_000_000L,x/6); s.debtMonthsLeft=Math.max(s.debtMonthsLeft,6); }
                 return "ذخیره اضطراری برای همین لحظه‌هاست: خریدن زمان بدون خریدن بدهی.";
             case "EV20":
-                if("A".equals(choiceId)) s.salary=Math.round(s.salary*1.12);
-                return "مذاکره وقتی با نتیجه و عدد همراه باشد بخشی از مدیریت درآمد است.";
+                if("A".equals(choiceId)) {
+                    double raise=s.hasStoryFlag(StoryDirector.SKILL_COURSE)?1.18:1.12;
+                    s.salary=Math.round(s.salary*raise);
+                }
+                return s.hasStoryFlag(StoryDirector.SKILL_COURSE)
+                        ?"مهارتی که قبلاً برایش سرمایه‌گذاری کردی قدرت مذاکره‌ات را بیشتر کرد."
+                        :"مذاکره وقتی با نتیجه و عدد همراه باشد بخشی از مدیریت درآمد است.";
             case "EV21":
                 if("A".equals(choiceId)){ s.housing=Math.round(s.housing*0.65); s.discretionary+=500_000L; }
                 else s.housing=Math.round(s.housing*1.30);
@@ -82,9 +87,13 @@ public class EventEngine {
                 if("A".equals(choiceId)){ long x=safeCash(s,20_000_000L); s.cash-=x; s.business+=x; s.sideIncome+=5_000_000L; }
                 return "آزمایش کوچک بازار ریسک کمتری از شروع بزرگ دارد.";
             case "EV23":
-                if("A".equals(choiceId)){ s.cash-=safeCash(s,6_000_000L); s.sideIncome+=1_500_000L; }
-                else s.cash-=safeCash(s,3_000_000L);
-                return "عدد ظاهری مخاطب با اعتماد واقعی مشتری یکی نیست.";
+                if("A".equals(choiceId)){
+                    s.cash-=safeCash(s,6_000_000L);
+                    s.sideIncome+=s.hasStoryFlag(StoryDirector.CREATOR)?3_000_000L:1_500_000L;
+                } else s.cash-=safeCash(s,3_000_000L);
+                return s.hasStoryFlag(StoryDirector.CREATOR)
+                        ?"شروع زودتر تولید محتوا حالا باعث شده تبلیغ واقعی بازده بیشتری بدهد."
+                        :"عدد ظاهری مخاطب با اعتماد واقعی مشتری یکی نیست.";
             case "EV24":
                 if("A".equals(choiceId)) s.discretionary=Math.max(0,s.discretionary-1_200_000L);
                 return "هزینه‌ای که دیگر ارزشی نمی‌سازد، فقط عادت است.";
@@ -103,9 +112,18 @@ public class EventEngine {
                 if("A".equals(choiceId)){ s.cash+=s.funds; s.funds=0; }
                 return "بازار قرمز آزمون برنامه است، نه فقط اعصاب.";
             case "EV29":
-                if("A".equals(choiceId)){ long bonus=20_000_000L; s.cash+=5_000_000L; s.emergencyFund+=7_000_000L; s.funds+=8_000_000L; }
-                else { s.cash+=5_000_000L; s.discretionary+=3_000_000L; }
-                return "پول غیرمنتظره می‌تواند سبک زندگی را بالا ببرد یا ترازنامه را قوی‌تر کند.";
+                long extra=s.hasStoryFlag(StoryDirector.BUSINESS)?12_000_000L:0L;
+                if("A".equals(choiceId)){
+                    s.cash+=5_000_000L+extra/3;
+                    s.emergencyFund+=7_000_000L+extra/3;
+                    s.funds+=8_000_000L+extra/3;
+                } else {
+                    s.cash+=5_000_000L+extra;
+                    s.discretionary+=3_000_000L;
+                }
+                return s.hasStoryFlag(StoryDirector.BUSINESS)
+                        ?"میکروبیزینس قبلی بخشی از این پول را ساخته؛ یک انتخاب قدیمی حالا برگشته است."
+                        :"پول غیرمنتظره می‌تواند سبک زندگی را بالا ببرد یا ترازنامه را قوی‌تر کند.";
             case "EV30":
                 if("A".equals(choiceId)){ long x=safeCash(s,5_000_000L); s.cash-=x; s.emergencyFund+=x; }
                 return "بازبینی منظم باعث می‌شود هدفت با زندگی واقعی هماهنگ بماند.";

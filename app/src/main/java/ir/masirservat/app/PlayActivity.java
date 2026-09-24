@@ -507,7 +507,13 @@ public class PlayActivity extends Activity {
         next.addView(tv(n,16,TEXT,false));box.addView(next);
 
         Button replay=btn("🔁 یک زندگی تازه شروع کن",GOLD,NAVY);
-        replay.setOnClickListener(v->{prefs.edit().clear().apply();finish();});box.addView(replay);
+        replay.setOnClickListener(v->{
+            prefs.edit().clear().apply();
+            Intent i=new Intent(this,MainActivity.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(i);
+            finish();
+        });box.addView(replay);
         Button exit=outline("بازگشت به صفحه اول");exit.setOnClickListener(v->finish());box.addView(exit);
 
         setContentView(sc);

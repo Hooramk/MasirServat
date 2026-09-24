@@ -163,14 +163,14 @@ public class GameState {
     public long monthlyIncome() { return salary + sideIncome + passiveIncome; }
     public long monthlyExpenses() { return housing + food + transport + utilities + health + discretionary + debtPayment; }
     public long essentialExpenses() { return housing + food + transport + utilities + health + debtPayment; }
-    public long netWorth() { return cash + emergencyFund + gold + funds + business - debt; }
+    public long netWorth() { return cash + savings + emergencyFund + gold + funds + business - debt; }
     public long realNetWorth() { return Math.round(netWorth() / headlineIndex); }
     public long cashFlow() { return monthlyIncome() - monthlyExpenses(); }
     public double purchasingPower() { return 100.0 / headlineIndex; }
 
     public int financialHealth() {
         long essential = Math.max(1, essentialExpenses());
-        double emergencyMonths = emergencyFund / (double) essential;
+        double emergencyMonths = (emergencyFund + savings) / (double) essential;
         double savings = monthlyIncome() > 0 ? cashFlow() / (double) monthlyIncome() : -1;
         double debtRatio = monthlyIncome() > 0 ? debtPayment / (double) monthlyIncome() : (debt > 0 ? 1 : 0);
         int score = 42;

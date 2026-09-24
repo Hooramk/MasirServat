@@ -213,11 +213,7 @@ public class MainActivity extends Activity {
 
         if (state.profileChosen && prefs.contains("month")) {
             Button cont = button("ادامه بازی  ←", GOLD, NAVY);
-            cont.setOnClickListener(v -> {
-                if (!state.personalityChosen) showPersonalityQuiz(0,0,0,0);
-                else if (state.month > 30) showEnding();
-                else showGame();
-            });
+            cont.setOnClickListener(v -> showGame());
             box.addView(cont);
 
             String p = state.personalityChosen ? " · " + state.personalityType : "";
@@ -249,7 +245,7 @@ public class MainActivity extends Activity {
         LinearLayout box = new LinearLayout(this);
         basePage(sc, box);
 
-        TextView step = pill("مرحله ۱ از ۳", Color.WHITE, NAVY);
+        TextView step = pill("مرحله ۱ از ۲", Color.WHITE, NAVY);
         LinearLayout.LayoutParams spp = new LinearLayout.LayoutParams(-2, -2);
         spp.gravity = Gravity.RIGHT;
         step.setLayoutParams(spp);
@@ -520,8 +516,8 @@ public class MainActivity extends Activity {
 
         LinearLayout txt=new LinearLayout(this);
         txt.setOrientation(LinearLayout.VERTICAL);
-        txt.addView(pill("مرحله ۳ از ۳",NAVY,GOLD));
-        TextView h=tv("صبحِ اولین ماه",28,Color.WHITE,true);
+        txt.addView(pill("مرحله ۲ از ۲",NAVY,GOLD));
+        TextView h=tv("شروع زندگی",28,Color.WHITE,true);
         h.setPadding(0,dp(10),0,0);
         txt.addView(h);
         TextView who=tv(safeName()+" · "+state.profession+" · "+state.personalityType,15,Color.rgb(222,230,238),false);
@@ -548,7 +544,7 @@ public class MainActivity extends Activity {
 
         LinearLayout goal=card();
         goal.addView(tv("🎯 مأموریت اول",18,GOLD,true));
-        goal.addView(tv(state.currentMission(),16,TEXT,false));
+        goal.addView(tv(state.loopMission(),16,TEXT,false));
         box.addView(goal);
 
         Button start=button("شروع بازی",GOLD,NAVY);
@@ -1108,7 +1104,7 @@ public class MainActivity extends Activity {
                 ? state.passiveIncome / (double)state.essentialExpenses() : 0;
 
         String text =
-                "🎯 مأموریت: " + state.currentMission() +
+                "🎯 مأموریت: " + state.loopMission() +
                 "\n\nپول نقد: " + money(state.cash) +
                 "\nصندوق اضطراری: " + money(state.emergencyFund) +
                 "\nطلا: " + money(state.gold) +
@@ -1272,7 +1268,7 @@ public class MainActivity extends Activity {
         replay.setOnClickListener(v -> {
             prefs.edit().clear().apply();
             state=new GameState();
-            pendingProfile="کارمند";
+            pendingProfile="دانشجو";
             pendingAvatar=1;
             showSetup();
         });

@@ -47,6 +47,14 @@ public class MainActivity extends Activity {
     private TextView personalityText, levelText, missionText, traitText, achievementText, locationText;
     private TextView moneyMeter, skillMeter, freedomMeter, socialMeter;
 
+    // v0.5 visual-novel gameplay
+    private SceneView vnScene;
+    private TextView vnDate, vnLocation, vnSpeaker, vnTitle, vnDialog;
+    private TextView vnMoney, vnSkill, vnFreedom, vnSocial;
+    private LinearLayout vnChoices, vnResult;
+    private TextView vnResultText;
+    private Button vnNext;
+
     @Override
     public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -556,17 +564,160 @@ public class MainActivity extends Activity {
             return;
         }
 
-        ScrollView sc = new ScrollView(this);
-        root = new LinearLayout(this);
-        basePage(sc, root);
+        ScrollView sc=new ScrollView(this);
+        sc.setFillViewport(true);
+        LinearLayout page=new LinearLayout(this);
+        page.setOrientation(LinearLayout.VERTICAL);
+        page.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        page.setBackgroundColor(Color.rgb(235,239,244));
+        sc.addView(page);
 
-        buildTopHeader();
-        buildStatusCard();
-        buildStoryCard();
-        buildBottomActions();
+        // CINEMATIC STAGE
+        FrameLayout stage=new FrameLayout(this);
+        stage.setBackgroundColor(NAVY);
+        page.addView(stage,new LinearLayout.LayoutParams(-1,dp(340)));
+
+        vnScene=new SceneView(this);
+        stage.addView(vnScene,new FrameLayout.LayoutParams(-1,-1));
+
+        // top HUD
+        LinearLayout hud=new LinearLayout(this);
+        hud.setOrientation(LinearLayout.VERTICAL);
+        hud.setPadding(dp(10),dp(10),dp(10),dp(8));
+        hud.setBackgroundColor(Color.argb(145,7,27,50));
+        FrameLayout.LayoutParams hudp=new FrameLayout.LayoutParams(-1,-2,Gravity.TOP);
+        hudp.setMargins(dp(8),dp(8),dp(8),0);
+        stage.addView(hud,hudp);
+
+        LinearLayout hudTop=new LinearLayout(this);
+        hudTop.setOrientation(LinearLayout.HORIZONTAL);
+        hudTop.setGravity(Gravity.CENTER_VERTICAL);
+        hudTop.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        vnDate=pill("",NAVY,GOLD);
+        TextView profile=tv(safeName()+"  ·  "+state.personalityType,13,Color.WHITE,true);
+        hudTop.addView(profile,new LinearLayout.LayoutParams(0,-2,1));
+        hudTop.addView(vnDate);
+        hud.addView(hudTop);
+
+        LinearLayout meters=new LinearLayout(this);
+        meters.setOrientation(LinearLayout.HORIZONTAL);
+        meters.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        meters.setPadding(0,dp(8),0,0);
+        vnMoney=vnHudStat("💰","پول");
+        vnSkill=vnHudStat("🧠","مهارت");
+        vnFreedom=vnHudStat("🕊","آزادی");
+        vnSocial=vnHudStat("🔥","اعتبار");
+        meters.addView(vnMoney,new LinearLayout.LayoutParams(0,dp(50),1));
+        meters.addView(vnSkill,new LinearLayout.LayoutParams(0,dp(50),1));
+        meters.addView(vnFreedom,new LinearLayout.LayoutParams(0,dp(50),1));
+        meters.addView(vnSocial,new LinearLayout.LayoutParams(0,dp(50),1));
+        hud.addView(meters);
+
+        vnLocation=pill("",Color.WHITE,Color.argb(155,7,27,50));
+        FrameLayout.LayoutParams locp=new FrameLayout.LayoutParams(-2,-2,Gravity.BOTTOM|Gravity.LEFT);
+        locp.setMargins(dp(12),0,0,dp(12));
+        stage.addView(vnLocation,locp);
+
+        // story sheet
+        LinearLayout sheet=new LinearLayout(this);
+        sheet.setOrientation(LinearLayout.VERTICAL);
+        sheet.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        sheet.setPadding(dp(16),dp(14),dp(16),dp(18));
+        sheet.setBackgroundColor(Color.WHITE);
+        page.addView(sheet,new LinearLayout.LayoutParams(-1,-2));
+
+        LinearLayout speakerRow=new LinearLayout(this);
+        speakerRow.setOrientation(LinearLayout.HORIZONTAL);
+        speakerRow.setGravity(Gravity.CENTER_VERTICAL);
+        speakerRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+        vnSpeaker=pill("",Color.WHITE,NAVY);
+        speakerRow.addView(vnSpeaker);
+        TextView chapter=tv(state.chapterTitle(),13,GOLD,true);
+        chapter.setGravity(Gravity.LEFT);
+        speakerRow.addView(chapter,new LinearLayout.LayoutParams(0,-2,1));
+        sheet.addView(speakerRow);
+
+        vnTitle=tv("",24,NAVY,true);
+        vnTitle.setPadding(0,dp(11),0,dp(8));
+        sheet.addView(vnTitle);
+
+        vnDialog=tv("",17,TEXT,false);
+        vnDialog.setPadding(dp(15),dp(13),dp(15),dp(13));
+        vnDialog.setBackground(bg(Color.rgb(242,245,248),18));
+        sheet.addView(vnDialog);
+
+        TextView choicePrompt=tv("تو چه کار می‌کنی؟",14,GOLD,true);
+        choicePrompt.setPadding(0,dp(15),0,dp(3));
+        sheet.addView(choicePrompt);
+
+        vnChoices=new LinearLayout(this);
+        vnChoices.setOrientation(LinearLayout.VERTICAL);
+        sheet.addView(vnChoices);
+
+        vnResult=new LinearLayout(this);
+        vnResult.setOrientation(LinearLayout.VERTICAL);
+        vnResult.setPadding(dp(14),dp(13),dp(14),dp(13));
+        vnResult.setBackground(bordered(Color.rgb(239,248,243),16,Color.rgb(188,224,203)));
+        LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);
+        rp.setMargins(0,dp(10),0,dp(4));
+        vnResult.setLayoutParams(rp);
+        TextView rt=tv("نتیجه انتخاب",15,GREEN,true);
+        vnResultText=tv("",14,TEXT,false);
+        vnResultText.setPadding(0,dp(5),0,0);
+        vnResult.addView(rt);
+        vnResult.addView(vnResultText);
+        sheet.addView(vnResult);
+
+        vnNext=button("ادامه داستان  ←",GOLD,NAVY);
+        vnNext.setOnClickListener(v -> advanceMonth());
+        sheet.addView(vnNext);
+
+        // compact game nav
+        LinearLayout nav=new LinearLayout(this);
+        nav.setOrientation(LinearLayout.HORIZONTAL);
+        nav.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        nav.setPadding(dp(12),dp(6),dp(12),dp(14));
+        nav.setBackgroundColor(Color.rgb(235,239,244));
+
+        Button map=vnNav("🗺","نقشه");
+        map.setOnClickListener(v -> showCityMap());
+        Button profileBtn=vnNav("👤","پروفایل");
+        profileBtn.setOnClickListener(v -> showCharacterSheet());
+        Button wallet=vnNav("💳","دارایی");
+        wallet.setOnClickListener(v -> showBalanceSheet());
+        Button exit=vnNav("⌂","خروج");
+        exit.setOnClickListener(v -> {state.save(prefs);showWelcome();});
+        nav.addView(map,new LinearLayout.LayoutParams(0,dp(58),1));
+        nav.addView(profileBtn,new LinearLayout.LayoutParams(0,dp(58),1));
+        nav.addView(wallet,new LinearLayout.LayoutParams(0,dp(58),1));
+        nav.addView(exit,new LinearLayout.LayoutParams(0,dp(58),1));
+        page.addView(nav);
 
         setContentView(sc);
         render();
+    }
+
+    private TextView vnHudStat(String icon,String label){
+        TextView v=tv(icon+"\n"+label,11,Color.WHITE,true);
+        v.setGravity(Gravity.CENTER);
+        v.setBackground(bg(Color.argb(90,255,255,255),12));
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(50),1);
+        p.setMargins(dp(2),0,dp(2),0);
+        v.setLayoutParams(p);
+        return v;
+    }
+
+    private Button vnNav(String icon,String label){
+        Button b=new Button(this);
+        b.setText(icon+"\n"+label);
+        b.setTextSize(11);
+        b.setTextColor(NAVY);
+        b.setAllCaps(false);
+        b.setGravity(Gravity.CENTER);
+        b.setPadding(dp(2),0,dp(2),0);
+        b.setBackground(bg(Color.WHITE,14));
+        return b;
     }
 
     private void buildTopHeader() {
@@ -904,79 +1055,50 @@ public class MainActivity extends Activity {
     }
 
     private void render() {
-        EventData e = events.get((state.month - 1) % events.size());
+        EventData e=events.get((state.month-1)%events.size());
 
-        chapterText.setText(e.chapter != null ? e.chapter : state.chapterTitle());
         int monthOfYear=((state.month-1)%12)+1;
-        monthText.setText(nf.format(state.persianYear())+" · ماه "+nf.format(monthOfYear));
-        playerText.setText(safeName()+" · "+nf.format(state.age())+" ساله");
-        personalityText.setText(state.profession+" · "+state.personalityType+" · "+GenZSystem.vibe(state));
-        levelText.setText("Lv."+nf.format(CharacterSystem.level(state))+" · "+CharacterSystem.levelTitle(state)+" · XP "+nf.format(state.xp));
-        playerAvatar.setCharacter(state.avatarStyle,"player");
-        storyProgress.setProgress(Math.min(30, state.month));
+        vnDate.setText(nf.format(state.age())+" سال · "+nf.format(state.persianYear())+"/"+nf.format(monthOfYear));
+        vnLocation.setText("📍 "+(e.location==null?"تهران":e.location));
+        vnSpeaker.setText(e.speaker==null?"داستان":e.speaker);
+        vnTitle.setText(e.title);
+        vnDialog.setText(StoryDirector.story(state,e));
 
-        missionText.setText(state.currentMission());
-        traitText.setText("انضباط "+nf.format(state.discipline)+"  ·  جسارت "+nf.format(state.courage)+"  ·  آرامش "+nf.format(state.calm));
-        achievementText.setText("🏅 Achievement  "+nf.format(state.achievementCount())+" / ۵");
+        vnMoney.setText("💰\n"+nf.format(state.moneyScore()));
+        vnSkill.setText("🧠\n"+nf.format(state.skill));
+        vnFreedom.setText("🕊\n"+nf.format(state.freedom));
+        vnSocial.setText("🔥\n"+nf.format(state.social));
 
-        moneyMeter.setText("💰  پول\n"+nf.format(state.moneyScore())+" / ۱۰۰");
-        skillMeter.setText("🧠  مهارت\n"+nf.format(state.skill)+" / ۱۰۰");
-        freedomMeter.setText("🕊  آزادی\n"+nf.format(state.freedom)+" / ۱۰۰");
-        socialMeter.setText("🔥  اعتبار\n"+nf.format(state.social)+" / ۱۰۰");
+        String sp=e.speaker==null?"داستان":e.speaker;
+        vnScene.setScene(e.location,StoryDirector.mood(e),npcStyle(sp),state.avatarStyle,state.month);
 
-        int health = state.financialHealth();
-        healthProgress.setProgress(health);
-        healthText.setText(nf.format(health) + " / ۱۰۰");
-        if (health < 40) {
-            healthText.setBackground(bg(RED, 18));
-            healthText.setTextColor(Color.WHITE);
-            healthProgress.setProgressTintList(ColorStateList.valueOf(RED));
-        } else if (health < 70) {
-            healthText.setBackground(bg(GOLD, 18));
-            healthText.setTextColor(NAVY);
-            healthProgress.setProgressTintList(ColorStateList.valueOf(GOLD));
-        } else {
-            healthText.setBackground(bg(GREEN, 18));
-            healthText.setTextColor(Color.WHITE);
-            healthProgress.setProgressTintList(ColorStateList.valueOf(GREEN));
-        }
-
-        cashText.setText("نقدینگی\n" + shortMoney(state.cash));
-        long cf = state.cashFlow();
-        flowText.setText("جریان نقدی\n" + shortMoney(cf));
-        flowText.setTextColor(cf >= 0 ? GREEN : RED);
-        worthText.setText("دارایی خالص\n" + shortMoney(state.netWorth()));
-
-        String sp=e.speaker == null ? "داستان" : e.speaker;
-        speakerText.setText(sp);
-        locationText.setText("📍 "+(e.location==null?"تهران":e.location));
-        speakerAvatar.setCharacter(npcStyle(sp),sp);
-        eventTitle.setText(e.title);
-        eventDesc.setText(e.description);
-
-        choicesBox.removeAllViews();
-        for (EventData.Choice c : e.choices) {
-            Button b = outlineButton("↩  "+c.title);
+        vnChoices.removeAllViews();
+        for(EventData.Choice c:e.choices){
+            Button b=new Button(this);
+            b.setText(c.title);
             b.setTextSize(15);
-            if (state.choiceMade) {
-                b.setEnabled(false);
-                b.setAlpha(.45f);
-            }
-            b.setOnClickListener(v -> choose(e, c));
-            choicesBox.addView(b);
+            b.setTextColor(NAVY);
+            b.setAllCaps(false);
+            b.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+            b.setTextDirection(View.TEXT_DIRECTION_RTL);
+            b.setPadding(dp(15),0,dp(15),0);
+            b.setBackground(bordered(Color.WHITE,15,Color.rgb(209,216,223)));
+            LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(55));
+            bp.setMargins(0,dp(5),0,dp(5));
+            b.setLayoutParams(bp);
+            if(state.choiceMade){b.setEnabled(false);b.setAlpha(.40f);}
+            b.setOnClickListener(v -> choose(e,c));
+            vnChoices.addView(b);
         }
 
-        if (state.choiceMade) {
-            resultCard.setVisibility(View.VISIBLE);
-            if (lastOutcome != null) {
-                resultText.setText(lastImpact + "\n\nیاد گرفتی: " + lastOutcome);
-            } else {
-                resultText.setText("تصمیمت ثبت شده. بعضی پیامدها در ماه‌های بعد خودشان را نشان می‌دهند.");
-            }
-            nextButton.setVisibility(View.VISIBLE);
-        } else {
-            resultCard.setVisibility(View.GONE);
-            nextButton.setVisibility(View.GONE);
+        if(state.choiceMade){
+            vnResult.setVisibility(View.VISIBLE);
+            vnNext.setVisibility(View.VISIBLE);
+            if(lastOutcome!=null) vnResultText.setText(lastImpact+"\n\n"+lastOutcome);
+            else vnResultText.setText("انتخاب ثبت شده؛ بخشی از نتیجه ممکن است بعداً برگردد.");
+        }else{
+            vnResult.setVisibility(View.GONE);
+            vnNext.setVisibility(View.GONE);
         }
     }
 
@@ -990,52 +1112,60 @@ public class MainActivity extends Activity {
     }
 
     private void choose(EventData e, EventData.Choice c) {
-        if (state.choiceMade) return;
+        if(state.choiceMade)return;
 
-        long beforeWorth = state.netWorth();
-        long beforeFlow = state.cashFlow();
-        int beforeHealth = state.financialHealth();
+        long beforeWorth=state.netWorth();
+        long beforeFlow=state.cashFlow();
+        int beforeHealth=state.financialHealth();
         int beforeD=state.discipline, beforeC=state.courage, beforeCalm=state.calm;
         int beforeSkill=state.skill, beforeFreedom=state.freedom, beforeSocial=state.social;
 
-        String lesson = EventEngine.apply(state, e.id, c.id);
+        String lesson=EventEngine.apply(state,e.id,c.id);
         CharacterSystem.applyDecision(state,e.id,c.id);
         GenZSystem.applyChoice(state,e.id,c.id);
+        StoryDirector.recordChoice(state,e.id,c.id);
 
-        long afterWorth = state.netWorth();
-        long afterFlow = state.cashFlow();
-        int afterHealth = state.financialHealth();
+        long afterWorth=state.netWorth();
+        long afterFlow=state.cashFlow();
+        int afterHealth=state.financialHealth();
 
-        state.choiceMade = true;
-        int earned = 12;
-        if (afterHealth >= beforeHealth) {
+        state.choiceMade=true;
+        int earned=12;
+        if(afterHealth>=beforeHealth){
             state.goodDecisionStreak++;
-            earned += Math.min(8,state.goodDecisionStreak);
-        } else {
-            state.goodDecisionStreak = 0;
-        }
-        if(state.skill>beforeSkill) earned+=2;
-        state.xp += earned;
+            earned+=Math.min(8,state.goodDecisionStreak);
+        }else state.goodDecisionStreak=0;
+        if(state.skill>beforeSkill)earned+=2;
+        state.xp+=earned;
 
         String unlocked=state.unlockAchievements();
-        if(!unlocked.isEmpty()) state.xp += 15;
+        if(!unlocked.isEmpty())state.xp+=15;
 
-        long dw = afterWorth - beforeWorth;
-        long df = afterFlow - beforeFlow;
-        int dh = afterHealth - beforeHealth;
+        long dw=afterWorth-beforeWorth;
+        long df=afterFlow-beforeFlow;
+        int dh=afterHealth-beforeHealth;
 
-        lastOutcome = lesson;
-        String life="زندگی: مهارت "+signedInt(state.skill-beforeSkill)+
-                " · آزادی "+signedInt(state.freedom-beforeFreedom)+
-                " · اعتبار "+signedInt(state.social-beforeSocial);
-        String traits="شخصیت: انضباط "+signedInt(state.discipline-beforeD)+
+        String life="🧠 "+signedInt(state.skill-beforeSkill)+
+                "   🕊 "+signedInt(state.freedom-beforeFreedom)+
+                "   🔥 "+signedInt(state.social-beforeSocial);
+        String character="انضباط "+signedInt(state.discipline-beforeD)+
                 " · جسارت "+signedInt(state.courage-beforeC)+
-                " · آرامش "+signedInt(state.calm-beforeCalm)+
-                "\nXP +"+nf.format(earned)+(unlocked.isEmpty()?"":" + ۱۵ جایزه");
-        lastImpact = impactLine(dw, df, dh)+"\n"+life+"\n"+traits+
-                (unlocked.isEmpty()?"":"\n\nAchievement جدید!\n"+unlocked);
+                " · آرامش "+signedInt(state.calm-beforeCalm);
+
+        lastOutcome="یادگیری: "+lesson;
+        lastImpact=impactLine(dw,df,dh)+"\n"+life+"\n"+character+
+                "\nXP +"+nf.format(earned)+
+                (unlocked.isEmpty()?"":"\n\n🏆 "+unlocked.replace("\n","  ·  "));
+
         state.save(prefs);
         render();
+
+        if(vnResult!=null){
+            vnResult.setAlpha(0f);
+            vnResult.setTranslationY(dp(18));
+            vnResult.animate().alpha(1f).translationY(0f).setDuration(280).start();
+            vnResult.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM);
+        }
     }
 
     private String signedInt(int v){

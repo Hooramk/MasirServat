@@ -116,57 +116,93 @@ public class PlayActivity extends Activity {
         inHub=true;
         if(state.week>24){showSeasonEnd();return;}
 
-        ScrollView sc=new ScrollView(this);sc.setFillViewport(true);
-        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        box.setBackgroundColor(BG);box.setPadding(0,0,0,dp(20));sc.addView(box);
+        ScrollView sc=new ScrollView(this);
+        sc.setFillViewport(true);
+        LinearLayout box=new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        box.setBackgroundColor(BG);
+        box.setPadding(0,0,0,dp(20));
+        sc.addView(box);
 
-        LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.VERTICAL);top.setPadding(dp(16),dp(14),dp(16),dp(12));
-        GradientDrawable topBg=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{NAVY,NAVY2});top.setBackground(topBg);
-        LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        LinearLayout top=new LinearLayout(this);
+        top.setOrientation(LinearLayout.VERTICAL);
+        top.setPadding(dp(15),dp(13),dp(15),dp(11));
+        GradientDrawable topBg=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{NAVY,NAVY2});
+        top.setBackground(topBg);
+
+        LinearLayout row=new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         TextView who=tv((state.playerName==null||state.playerName.isEmpty()?"بازیکن":state.playerName)+" · "+state.profession,18,Color.WHITE,true);
         row.addView(who,new LinearLayout.LayoutParams(0,-2,1));
         row.addView(pill("هفته "+nf.format(state.week)+" / ۲۴",NAVY,GOLD));
         top.addView(row);
 
-        LinearLayout hud=new LinearLayout(this);hud.setOrientation(LinearLayout.HORIZONTAL);hud.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);hud.setPadding(0,dp(10),0,0);
+        LinearLayout hud=new LinearLayout(this);
+        hud.setOrientation(LinearLayout.HORIZONTAL);
+        hud.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        hud.setPadding(0,dp(9),0,0);
         hud.addView(hudBox("💰","نقد",shortMoney(state.cash)),new LinearLayout.LayoutParams(0,dp(62),1));
         hud.addView(hudBox("⚡","انرژی",nf.format(state.energy)+"/"+nf.format(state.maxEnergy)),new LinearLayout.LayoutParams(0,dp(62),1));
-        hud.addView(hudBox("🧠","مهارت",nf.format(state.skill)),new LinearLayout.LayoutParams(0,dp(62),1));
+        hud.addView(hudBox("⭐","اعتبار",nf.format(state.reputation)),new LinearLayout.LayoutParams(0,dp(62),1));
         hud.addView(hudBox("🔥","فالوئر",nf.format(state.followers)),new LinearLayout.LayoutParams(0,dp(62),1));
         top.addView(hud);
         box.addView(top);
 
         LinearLayout mission=card();
-        mission.addView(tv("🎯 هدف فعلی",13,GOLD,true));
-        TextView mt=tv(state.loopMission(),16,TEXT,true);mt.setPadding(0,dp(4),0,0);mission.addView(mt);box.addView(mission);
+        LinearLayout mr=new LinearLayout(this);
+        mr.setOrientation(LinearLayout.HORIZONTAL);
+        mr.setGravity(Gravity.CENTER_VERTICAL);
+        mr.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        LinearLayout mtBox=new LinearLayout(this);
+        mtBox.setOrientation(LinearLayout.VERTICAL);
+        mtBox.addView(tv("🎯 هدف بزرگ",13,GOLD,true));
+        mtBox.addView(tv(state.loopMission(),15,TEXT,true));
+        mr.addView(mtBox,new LinearLayout.LayoutParams(0,-2,1));
+        mr.addView(pill("Lv."+nf.format(state.careerLevel),Color.WHITE,NAVY));
+        mission.addView(mr);
+        box.addView(mission);
 
-        LifeHubView hub=new LifeHubView(this);hub.setState(state);
-        LinearLayout.LayoutParams hp=new LinearLayout.LayoutParams(-1,dp(285));hp.setMargins(dp(12),dp(4),dp(12),dp(6));hub.setLayoutParams(hp);
-        hub.setBackground(bg(Color.WHITE,18));box.addView(hub);
+        TextView mapTitle=tv("تهرانِ تو",20,NAVY,true);
+        mapTitle.setPadding(dp(16),dp(6),dp(16),dp(4));
+        box.addView(mapTitle);
+        TextView mapHint=tv("روی ساختمان‌ها بزن و برو سراغ زندگی.",13,MUTED,false);
+        mapHint.setPadding(dp(16),0,dp(16),dp(5));
+        box.addView(mapHint);
 
-        LinearLayout progress=card();
-        LinearLayout pr=new LinearLayout(this);pr.setOrientation(LinearLayout.HORIZONTAL);pr.setGravity(Gravity.CENTER_VERTICAL);pr.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        pr.addView(tv("Level "+nf.format(state.careerLevel)+" · XP شغلی "+nf.format(state.workXp)+"/۱۰۰",14,TEXT,true),new LinearLayout.LayoutParams(0,-2,1));
-        pr.addView(pill(GenZSystem.vibe(state),NAVY,Color.rgb(239,230,207)));
-        progress.addView(pr);
-        ProgressBar bar=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);bar.setMax(100);bar.setProgress(state.workXp);
-        bar.setProgressTintList(ColorStateList.valueOf(GOLD));bar.setProgressBackgroundTintList(ColorStateList.valueOf(Color.rgb(232,235,238)));
-        LinearLayout.LayoutParams barp=new LinearLayout.LayoutParams(-1,dp(7));barp.setMargins(0,dp(8),0,0);bar.setLayoutParams(barp);progress.addView(bar);
-        box.addView(progress);
+        CityMapView map=new CityMapView(this);
+        map.setState(state);
+        map.setListener(this::openLocation);
+        LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(-1,dp(420));
+        mp.setMargins(dp(10),0,dp(10),dp(6));
+        map.setLayoutParams(mp);
+        map.setBackground(bg(Color.WHITE,20));
+        box.addView(map);
 
-        TextView act=tv("امروز چی کار می‌کنی؟",18,NAVY,true);act.setPadding(dp(16),dp(8),dp(16),dp(3));box.addView(act);
-        LinearLayout grid=new LinearLayout(this);grid.setOrientation(LinearLayout.VERTICAL);grid.setPadding(dp(10),0,dp(10),0);
-        grid.addView(actionRow(new String[]{"💼 کار","🧠 مهارت","🗺 بیرون"},new View.OnClickListener[]{
-                v->showJobs(),v->showStudy(),v->showMap()
-        }));
-        grid.addView(actionRow(new String[]{"📱 آنلاین","🛍 ارتقا","🏦 بانک"},new View.OnClickListener[]{
-                v->showOnline(),v->showShop(),v->showBank()
-        }));
-        box.addView(grid);
+        LinearLayout quests=card();
+        LinearLayout qHead=new LinearLayout(this);
+        qHead.setOrientation(LinearLayout.HORIZONTAL);
+        qHead.setGravity(Gravity.CENTER_VERTICAL);
+        qHead.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        qHead.addView(tv("ماموریت‌های این هفته",18,NAVY,true),new LinearLayout.LayoutParams(0,-2,1));
+        qHead.addView(pill("XP + پول",NAVY,Color.rgb(239,230,207)));
+        quests.addView(qHead);
+        for(int i=0;i<3;i++) addQuestRow(quests,i);
+        box.addView(quests);
 
         LinearLayout footer=card();
+        LinearLayout status=new LinearLayout(this);
+        status.setOrientation(LinearLayout.HORIZONTAL);
+        status.setGravity(Gravity.CENTER_VERTICAL);
+        status.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        status.addView(tv("🧠 مهارت "+nf.format(state.skill)+"   ·   😊 حال "+nf.format(state.mood),13,MUTED,true),new LinearLayout.LayoutParams(0,-2,1));
+        if(state.businessLevel>0) status.addView(pill("🏪 کسب‌وکار Lv."+nf.format(state.businessLevel),NAVY,GOLD));
+        footer.addView(status);
+
         if(!state.restedThisWeek){
-            Button rest=outline("😴 یک استراحت کوتاه  ·  +۲ انرژی");
+            Button rest=outline("😴 استراحت کوتاه  ·  +۲ انرژی");
             rest.setOnClickListener(v->rest());
             footer.addView(rest);
         }
@@ -175,6 +211,82 @@ public class PlayActivity extends Activity {
         footer.addView(end);
         box.addView(footer);
 
+        setContentView(sc);
+    }
+
+    private void addQuestRow(LinearLayout parent,int index){
+        QuestSystem.Quest q=QuestSystem.get(state,index);
+        LinearLayout row=new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        row.setPadding(0,dp(7),0,dp(7));
+
+        TextView icon=tv(q.icon,24,NAVY,true);
+        icon.setGravity(Gravity.CENTER);
+        row.addView(icon,new LinearLayout.LayoutParams(dp(45),dp(45)));
+
+        LinearLayout txt=new LinearLayout(this);
+        txt.setOrientation(LinearLayout.VERTICAL);
+        txt.addView(tv(q.title,14,TEXT,true));
+        txt.addView(tv(q.progress+"  ·  جایزه "+shortMoney(q.reward),12,MUTED,false));
+        row.addView(txt,new LinearLayout.LayoutParams(0,-2,1));
+
+        Button claim=new Button(this);
+        claim.setAllCaps(false);
+        claim.setTextSize(12);
+        claim.setGravity(Gravity.CENTER);
+        claim.setText(q.claimed?"گرفته شد":(q.complete()?"بگیر":"در حال انجام"));
+        claim.setTextColor(q.complete()&&!q.claimed?NAVY:MUTED);
+        claim.setBackground(bg(q.complete()&&!q.claimed?GOLD:Color.rgb(235,238,241),12));
+        LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(dp(92),dp(42));
+        claim.setLayoutParams(cp);
+        claim.setEnabled(q.complete()&&!q.claimed);
+        claim.setOnClickListener(v->{
+            long reward=QuestSystem.claim(state,index);
+            state.save(prefs);
+            if(reward>0)Toast.makeText(this,"جایزه +"+money(reward),Toast.LENGTH_SHORT).show();
+            showHub();
+        });
+        row.addView(claim);
+        parent.addView(row);
+    }
+
+    private void openLocation(String id){
+        if("home".equals(id)) showHomeRoom();
+        else if("university".equals(id)) showStudy();
+        else if("cafe".equals(id)) showCafe();
+        else if("work".equals(id)) showJobs();
+        else if("gym".equals(id)) showGym();
+        else if("shop".equals(id)) showShop();
+        else if("bank".equals(id)) showBank();
+        else if("business".equals(id)) showBusiness();
+    }
+
+    private void showHomeRoom(){
+        ScrollView sc=page("خانه");
+        LinearLayout box=contentOf(sc);
+
+        LifeHubView home=new LifeHubView(this);
+        home.setState(state);
+        LinearLayout.LayoutParams hp=new LinearLayout.LayoutParams(-1,dp(330));
+        hp.setMargins(0,dp(8),0,dp(8));
+        home.setLayoutParams(hp);
+        home.setBackground(bg(Color.WHITE,20));
+        box.addView(home);
+
+        LinearLayout c=card();
+        c.addView(tv("فضای شخصی تو",19,NAVY,true));
+        c.addView(tv("اتاق Level "+nf.format(state.roomLevel)+"  ·  لپ‌تاپ Level "+nf.format(state.laptopLevel)+"  ·  گوشی Level "+nf.format(state.phoneLevel),14,MUTED,false));
+        Button online=outline("📱 برو آنلاین");
+        online.setOnClickListener(v->showOnline());
+        c.addView(online);
+        if(!state.restedThisWeek){
+            Button rest=btn("😴 استراحت  ·  +۲ انرژی",GOLD,NAVY);
+            rest.setOnClickListener(v->rest());
+            c.addView(rest);
+        }
+        box.addView(c);
         setContentView(sc);
     }
 
@@ -397,14 +509,7 @@ public class PlayActivity extends Activity {
     }
 
     private void showMap(){
-        ScrollView sc=page("نقشه شهر");
-        LinearLayout box=contentOf(sc);
-        TextView sub=tv("لوکیشن را انتخاب کن؛ هر جا فعالیت خودش را دارد.",15,MUTED,false);sub.setPadding(0,dp(7),0,dp(8));box.addView(sub);
-        box.addView(mapRow(new String[]{"🏠 خانه","🎓 دانشگاه"},new View.OnClickListener[]{v->showHub(),v->showStudy()}));
-        box.addView(mapRow(new String[]{"💼 محل کار","☕ کافه"},new View.OnClickListener[]{v->showJobs(),v->showCafe()}));
-        box.addView(mapRow(new String[]{"🏋 باشگاه","🛍 فروشگاه"},new View.OnClickListener[]{v->showGym(),v->showShop()}));
-        box.addView(mapRow(new String[]{"🏦 بانک","📱 آنلاین"},new View.OnClickListener[]{v->showBank(),v->showOnline()}));
-        setContentView(sc);
+        showHub();
     }
 
     private LinearLayout mapRow(String[] names,View.OnClickListener[] ls){
@@ -416,6 +521,61 @@ public class PlayActivity extends Activity {
         return row;
     }
 
+    private void showBusiness(){
+        ScrollView sc=page(state.businessLevel==0?"ملک خالی":"کسب‌وکار من");
+        LinearLayout box=contentOf(sc);
+
+        LinearLayout hero=card();
+        hero.setBackground(bg(state.businessLevel>0?Color.rgb(255,249,232):Color.WHITE,20));
+        hero.addView(tv(state.businessLevel==0?"🏗 این ملک هنوز خالیه":"🏪 کسب‌وکار تو · Level "+nf.format(state.businessLevel),23,NAVY,true));
+        long weekly=state.businessLevel==0?0L:(650_000L*state.businessLevel+state.reputation*12_000L);
+        hero.addView(tv(state.businessLevel==0
+                ?"می‌توانی اینجا اولین کسب‌وکار کوچکت را راه بیندازی و بعد ارتقایش بدهی."
+                :"درآمد تقریبی هفتگی: "+money(weekly)+"\nاعتبار شهر: "+nf.format(state.reputation)+"/۱۰۰",
+                15,MUTED,false));
+        box.addView(hero);
+
+        if(state.businessLevel==0){
+            LinearLayout start=card();
+            start.addView(tv("شروع: فروشگاه آنلاین کوچک",18,GOLD,true));
+            start.addView(tv("هزینه راه‌اندازی: ۲۰ میلیون تومان\nبعد از راه‌اندازی، هر هفته بدون مصرف انرژی درآمد می‌سازد.",14,TEXT,false));
+            Button b=btn("راه‌اندازی  ·  ۲۰ میلیون",GOLD,NAVY);
+            b.setOnClickListener(v->buyBusiness(20_000_000L));
+            start.addView(b);box.addView(start);
+        }else if(state.businessLevel<3){
+            long cost=state.businessLevel==1?40_000_000L:75_000_000L;
+            LinearLayout up=card();
+            up.addView(tv("ارتقای کسب‌وکار",18,GOLD,true));
+            up.addView(tv(state.businessLevel==1?"از فروشگاه کوچک به برند محلی":"از برند محلی به کسب‌وکار تثبیت‌شده",14,TEXT,false));
+            Button b=btn("ارتقا  ·  "+money(cost),GOLD,NAVY);
+            b.setOnClickListener(v->buyBusiness(cost));
+            up.addView(b);box.addView(up);
+        }else{
+            LinearLayout max=card();
+            max.addView(tv("🏆 کسب‌وکار به بالاترین Level این فصل رسید",18,GREEN,true));
+            max.addView(tv("حالا تمرکزت روی اعتبار، مهارت و دارایی‌های بعدی است.",14,MUTED,false));
+            box.addView(max);
+        }
+
+        setContentView(sc);
+    }
+
+    private void buyBusiness(long cost){
+        if(state.cash<cost){
+            Toast.makeText(this,"برای این ارتقا پول کافی نداری",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        state.cash-=cost;
+        state.businessLevel++;
+        state.business+=cost;
+        state.reputation=Math.min(100,state.reputation+8);
+        state.freedom=Math.min(100,state.freedom+4);
+        state.xp+=30;
+        state.save(prefs);
+        Toast.makeText(this,"کسب‌وکارت یک Level رشد کرد 🚀",Toast.LENGTH_SHORT).show();
+        showBusiness();
+    }
+
     private void showCafe(){
         ScrollView sc=page("کافه");
         LinearLayout box=contentOf(sc);
@@ -425,7 +585,7 @@ public class PlayActivity extends Activity {
             if(state.cash<650_000L){Toast.makeText(this,"پول کافی نیست",Toast.LENGTH_SHORT).show();return;}
             if(!GameLoopEngine.spendEnergy(state,1)){noEnergy();return;}
             state.cash-=650_000L;state.social=Math.min(100,state.social+5);state.mood=Math.min(100,state.mood+8);
-            state.relAmir=Math.min(100,state.relAmir+2);state.save(prefs);Toast.makeText(this,"حال خوب +۸ · اعتبار +۵",Toast.LENGTH_SHORT).show();showCafe();
+            state.relAmir=Math.min(100,state.relAmir+2);state.socialCount++;state.reputation=Math.min(100,state.reputation+1);state.save(prefs);Toast.makeText(this,"حال خوب +۸ · اعتبار +۵",Toast.LENGTH_SHORT).show();showCafe();
         });
         box.addView(hang);
         Button work=outline("یک شیفت کافه کار کن");work.setOnClickListener(v->startShift("کافه","شیفت کافه"));box.addView(work);
@@ -440,7 +600,7 @@ public class PlayActivity extends Activity {
         b.setOnClickListener(v->{
             if(state.cash<350_000L){Toast.makeText(this,"پول کافی نیست",Toast.LENGTH_SHORT).show();return;}
             if(!GameLoopEngine.spendEnergy(state,1)){noEnergy();return;}
-            state.cash-=350_000L;state.mood=Math.min(100,state.mood+8);state.focus=Math.min(100,state.focus+5);state.social=Math.min(100,state.social+1);state.save(prefs);
+            state.cash-=350_000L;state.mood=Math.min(100,state.mood+8);state.focus=Math.min(100,state.focus+5);state.social=Math.min(100,state.social+1);state.workoutCount++;state.save(prefs);
             Toast.makeText(this,"تمرکز +۵ · حال +۸",Toast.LENGTH_SHORT).show();showGym();
         });
         c.addView(b);box.addView(c);setContentView(sc);
@@ -452,7 +612,14 @@ public class PlayActivity extends Activity {
     }
 
     private void endWeek(){
-        String recap=GameLoopEngine.endWeek(state);state.save(prefs);
+        long questBonus=0L;
+        for(int i=0;i<3;i++){
+            QuestSystem.Quest q=QuestSystem.get(state,i);
+            if(q.complete()&&!q.claimed) questBonus+=QuestSystem.claim(state,i);
+        }
+        String recap=GameLoopEngine.endWeek(state);
+        if(questBonus>0)recap+="\nماموریت‌های تکمیل‌شده: +"+shortMoney(questBonus);
+        state.save(prefs);
         if(state.week>24){showSeasonEnd();return;}
         new AlertDialog.Builder(this)
                 .setTitle("هفته تمام شد 🌙")
@@ -495,6 +662,8 @@ public class PlayActivity extends Activity {
                 "\n🏠 Level اتاق: "+nf.format(state.roomLevel)+
                 "\n💻 Level لپ‌تاپ: "+nf.format(state.laptopLevel)+
                 "\n🛵 Level رفت‌وآمد: "+nf.format(state.transportLevel)+
+                "\n🏪 Level کسب‌وکار: "+nf.format(state.businessLevel)+
+                "\n⭐ اعتبار شهر: "+nf.format(state.reputation)+"/۱۰۰"+
                 "\n📈 دارایی سرمایه‌ای: "+money(state.gold+state.funds)+
                 "\n⚠ بدهی: "+money(state.debt),
                 16,TEXT,false));box.addView(summary);

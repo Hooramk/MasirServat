@@ -6,6 +6,7 @@ namespace MasirServat
     public enum InteractionType
     {
         CafeJob,
+        DeliveryJob,
         University,
         Bank,
         Shop,
@@ -39,6 +40,17 @@ namespace MasirServat
             {
                 case InteractionType.CafeJob:
                     JobMinigame.I?.Begin("cafe", "شیفت کافه", basePay);
+                    break;
+
+                case InteractionType.DeliveryJob:
+                    if (!GameState.I.Data.hasScooter)
+                    {
+                        HUDController.I?.Toast("اول باید موتور بخری");
+                    }
+                    else
+                    {
+                        JobMinigame.I?.Begin("delivery", "پیک شهری", basePay);
+                    }
                     break;
 
                 case InteractionType.University:

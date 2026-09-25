@@ -20,7 +20,7 @@ namespace MasirServat
         void Awake()
         {
             I = this;
-            font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            font = UIFontProvider.Get();
             Build();
         }
 

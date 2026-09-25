@@ -29,7 +29,7 @@ namespace MasirServat
         public void Earn(long amount, int xp = 0)
         {
             var d = GameState.I.Data;
-            d.cash += Mathf.Max(0, (int)Mathf.Min(amount, int.MaxValue));
+            if (amount > 0) d.cash += amount;
             if (xp > 0)
             {
                 d.jobXp += xp;

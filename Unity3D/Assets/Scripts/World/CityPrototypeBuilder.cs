@@ -123,6 +123,9 @@ namespace MasirServat
             tm.anchor = TextAnchor.MiddleCenter;
             tm.alignment = TextAlignment.Center;
             tm.color = Color.white;
+            tm.font = UIFontProvider.Get();
+            var meshRenderer = sign.GetComponent<MeshRenderer>();
+            if (meshRenderer != null && tm.font != null) meshRenderer.sharedMaterial = tm.font.material;
 
             var marker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             marker.name = name + "_Interaction";

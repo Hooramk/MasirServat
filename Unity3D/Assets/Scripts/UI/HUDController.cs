@@ -95,25 +95,29 @@ namespace MasirServat
 
         void BuildMovementPad(Transform parent)
         {
-            var pad = Panel("MovePad", parent, new Color(0, 0, 0, 0.0f));
-            SetRect(pad.rectTransform, new Vector2(0, 0), new Vector2(0, 0), new Vector2(165, 160), new Vector2(300, 300), new Vector2(0.5f, 0.5f));
+            var baseGo = new GameObject("VirtualJoystick", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            baseGo.transform.SetParent(parent, false);
+            var baseRt = baseGo.GetComponent<RectTransform>();
+            baseRt.anchorMin = baseRt.anchorMax = new Vector2(0, 0);
+            baseRt.pivot = new Vector2(0.5f, 0.5f);
+            baseRt.anchoredPosition = new Vector2(175, 165);
+            baseRt.sizeDelta = new Vector2(230, 230);
 
-            MakeDirection(pad.transform, "↑", new Vector2(0, 1), new Vector2(0, 92));
-            MakeDirection(pad.transform, "↓", new Vector2(0, -1), new Vector2(0, -92));
-            MakeDirection(pad.transform, "←", new Vector2(-1, 0), new Vector2(-92, 0));
-            MakeDirection(pad.transform, "→", new Vector2(1, 0), new Vector2(92, 0));
-        }
+            var baseImage = baseGo.GetComponent<Image>();
+            baseImage.color = new Color(0.03f, 0.08f, 0.14f, 0.58f);
 
-        void MakeDirection(Transform parent, string text, Vector2 dir, Vector2 pos)
-        {
-            var b = Button("Dir" + text, parent, text, new Color(0.03f, 0.08f, 0.14f, 0.72f));
-            var rt = b.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = pos;
-            rt.sizeDelta = new Vector2(96, 96);
-            var hold = b.gameObject.AddComponent<HoldDirectionButton>();
-            hold.direction = dir;
+            var knobGo = new GameObject("Knob", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            knobGo.transform.SetParent(baseGo.transform, false);
+            var knobRt = knobGo.GetComponent<RectTransform>();
+            knobRt.anchorMin = knobRt.anchorMax = new Vector2(0.5f, 0.5f);
+            knobRt.pivot = new Vector2(0.5f, 0.5f);
+            knobRt.anchoredPosition = Vector2.zero;
+            knobRt.sizeDelta = new Vector2(94, 94);
+            knobGo.GetComponent<Image>().color = new Color(0.88f, 0.90f, 0.92f, 0.82f);
+
+            var joystick = baseGo.AddComponent<VirtualJoystick>();
+            joystick.knob = knobRt;
+            joystick.radius = 82f;
         }
 
         public void Refresh()

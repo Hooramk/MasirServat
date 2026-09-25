@@ -27,6 +27,12 @@ namespace MasirServat
 
         void Update()
         {
+            if (JobMinigame.I != null && JobMinigame.I.IsActive)
+            {
+                MobileInput.Move = Vector2.zero;
+                return;
+            }
+
             Vector2 move = MobileInput.Move;
             if (move.sqrMagnitude < 0.01f)
                 move = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));

@@ -37,6 +37,9 @@ namespace MasirServat
             CreateBuilding("Business", "ملک خالی", new Vector3(-18, 2.2f, 18), new Vector3(10, 4.4f, 8),
                 new Color(0.50f, 0.50f, 0.48f), InteractionType.Business, "راه‌اندازی / ارتقای کسب‌وکار");
 
+            CreateBuilding("DeliveryHub", "مرکز ارسال", new Vector3(19, 2.1f, 19), new Vector3(9, 4.2f, 7),
+                new Color(0.34f, 0.46f, 0.64f), InteractionType.DeliveryJob, "کار پیک · نیاز به موتور");
+
             CreateScooter(new Vector3(12, 0.55f, 10));
 
             for (int i = 0; i < 14; i++)
@@ -131,6 +134,7 @@ namespace MasirServat
             ia.title = label;
             ia.prompt = prompt;
             if (type == InteractionType.CafeJob) ia.basePay = 650_000;
+            if (type == InteractionType.DeliveryJob) ia.basePay = 1_050_000;
         }
 
         Transform CreatePlayer(Vector3 pos)

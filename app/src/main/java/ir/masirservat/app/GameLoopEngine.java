@@ -30,6 +30,8 @@ public class GameLoopEngine {
             s.freedom=Math.min(100,s.freedom+1);
         }
         s.cash+=reward;
+        s.workCount++;
+        if(score>=85)s.reputation=Math.min(100,s.reputation+1);
         s.xp+=Math.max(5,score/12);
         return reward;
     }
@@ -40,6 +42,7 @@ public class GameLoopEngine {
         s.followers+=gain;
         s.social=Math.min(100,s.social+2);
         s.skill=Math.min(100,s.skill+1);
+        s.contentCount++;
         s.xp+=8;
         return gain;
     }
@@ -50,6 +53,7 @@ public class GameLoopEngine {
         int gain=baseSkill + (s.focus>=70?1:0);
         s.skill=Math.min(100,s.skill+gain);
         s.focus=Math.max(35,s.focus-4);
+        s.studyCount++;
         s.xp+=gain*2;
         return gain;
     }
@@ -57,6 +61,7 @@ public class GameLoopEngine {
     public static String endWeek(GameState s){
         long recurring = s.salary/4 + s.sideIncome/4 + s.passiveIncome/4;
         long creator = s.followers>=1000 ? (s.followers/1000L)*220_000L : 0L;
+        long businessIncome = s.businessLevel==0 ? 0L : (650_000L*s.businessLevel + s.reputation*12_000L);
         long costs=s.weeklyBaseCost();
 
         if(s.debtPayment>0){
@@ -66,7 +71,7 @@ public class GameLoopEngine {
             if(s.debt==0)s.debtPayment=0;
         }
 
-        s.cash+=recurring+creator-costs;
+        s.cash+=recurring+creator+businessIncome-costs;
 
         if(s.week%4==0){
             s.headlineIndex*=1.025;
@@ -91,8 +96,10 @@ public class GameLoopEngine {
         s.energy=s.maxEnergy;
         s.weeklyActions=0;
         s.restedThisWeek=false;
+        QuestSystem.resetWeek(s);
 
         return "درآمد تکرارشونده: "+fmt(recurring+creator)+
+                "\nدرآمد کسب‌وکار: "+fmt(businessIncome)+
                 "\nهزینه زندگی: "+fmt(costs)+
                 "\nمانده نقدی: "+fmt(s.cash);
     }

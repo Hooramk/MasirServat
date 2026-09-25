@@ -7,7 +7,7 @@ namespace MasirServat
     public class GameData
     {
         public string playerName = "بازیکن";
-        public long cash = 4_000_000;
+        public long cash = 6_000_000;
         public long savings = 0;
         public long debt = 0;
         public int energy = 5;

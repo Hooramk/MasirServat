@@ -169,7 +169,7 @@ namespace MasirServat
             rt.sizeDelta = box;
 
             var t = go.GetComponent<Text>();
-            t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            t.font = UIFontProvider.Get();
             t.text = value;
             t.fontSize = size;
             t.color = Color.white;

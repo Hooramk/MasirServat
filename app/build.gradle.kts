@@ -7,8 +7,8 @@ android {
         applicationId = "ir.masirservat.app"
         minSdk = 23
         targetSdk = 35
-        versionCode = 9
-        versionName = "0.6.1"
+        versionCode = 10
+        versionName = "0.7.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

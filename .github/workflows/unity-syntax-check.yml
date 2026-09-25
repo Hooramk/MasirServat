@@ -1,0 +1,65 @@
+name: Unity CSharp Syntax Check
+
+on:
+  push:
+    paths:
+      - '.github/workflows/unity-syntax-check.yml'
+  workflow_dispatch:
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Unity rebuild branch
+        uses: actions/checkout@v4
+        with:
+          ref: unity3d-rebuild
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Parse all Unity CSharp files
+        shell: bash
+        run: |
+          set -e
+          rm -rf /tmp/UnitySyntax
+          dotnet new console -n UnitySyntax -o /tmp/UnitySyntax --force >/dev/null
+          cd /tmp/UnitySyntax
+          dotnet add package Microsoft.CodeAnalysis.CSharp --version 4.11.0 >/dev/null
+          cat > Program.cs <<'CS'
+          using System;
+          using System.IO;
+          using System.Linq;
+          using Microsoft.CodeAnalysis;
+          using Microsoft.CodeAnalysis.CSharp;
+
+          var root = Path.Combine(Environment.GetEnvironmentVariable("GITHUB_WORKSPACE")!, "Unity3D", "Assets");
+          var files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
+          var errors = 0;
+
+          foreach (var file in files)
+          {
+              var source = File.ReadAllText(file);
+              var tree = CSharpSyntaxTree.ParseText(source, path: file);
+              var diagnostics = tree.GetDiagnostics()
+                  .Where(d => d.Severity == DiagnosticSeverity.Error)
+                  .ToArray();
+
+              if (diagnostics.Length == 0)
+              {
+                  Console.WriteLine("OK  " + Path.GetRelativePath(root, file));
+                  continue;
+              }
+
+              errors += diagnostics.Length;
+              Console.WriteLine("FAIL " + Path.GetRelativePath(root, file));
+              foreach (var d in diagnostics)
+                  Console.WriteLine("  " + d);
+          }
+
+          Console.WriteLine($"Checked {files.Length} C# files; syntax errors: {errors}");
+          Environment.Exit(errors == 0 ? 0 : 1);
+          CS
+          dotnet run --no-restore

@@ -40,6 +40,18 @@ public class GameState {
     public boolean restedThisWeek = false;
     public long savings = 0L;
 
+    // v0.7 city-life progression
+    public int businessLevel = 0;
+    public int reputation = 10;
+    public int workCount = 0;
+    public int studyCount = 0;
+    public int socialCount = 0;
+    public int contentCount = 0;
+    public int workoutCount = 0;
+    public boolean quest1Claimed = false;
+    public boolean quest2Claimed = false;
+    public boolean quest3Claimed = false;
+
     public boolean achEmergency = false;
     public boolean achDebtFree = false;
     public boolean achInvestor = false;
@@ -112,6 +124,16 @@ public class GameState {
         weeklyActions = 0;
         restedThisWeek = false;
         savings = 0L;
+        businessLevel = 0;
+        reputation = 10;
+        workCount = 0;
+        studyCount = 0;
+        socialCount = 0;
+        contentCount = 0;
+        workoutCount = 0;
+        quest1Claimed = false;
+        quest2Claimed = false;
+        quest3Claimed = false;
 
         cash = 15_000_000L;
         salary = 0L;
@@ -292,6 +314,10 @@ public class GameState {
                 .putInt("transportLevel",transportLevel).putInt("careerLevel",careerLevel).putInt("workXp",workXp)
                 .putInt("followers",followers).putInt("mood",mood).putInt("focus",focus).putInt("weeklyActions",weeklyActions)
                 .putBoolean("restedThisWeek",restedThisWeek).putLong("savings",savings)
+                .putInt("businessLevel",businessLevel).putInt("reputation",reputation)
+                .putInt("workCount",workCount).putInt("studyCount",studyCount).putInt("socialCount",socialCount)
+                .putInt("contentCount",contentCount).putInt("workoutCount",workoutCount)
+                .putBoolean("quest1Claimed",quest1Claimed).putBoolean("quest2Claimed",quest2Claimed).putBoolean("quest3Claimed",quest3Claimed)
                 .putBoolean("achEmergency",achEmergency).putBoolean("achDebtFree",achDebtFree).putBoolean("achInvestor",achInvestor)
                 .putBoolean("achSideIncome",achSideIncome).putBoolean("achHealth80",achHealth80)
                 .putLong("cash", cash).putLong("salary", salary).putLong("sideIncome", sideIncome)
@@ -340,6 +366,16 @@ public class GameState {
         s.weeklyActions=p.getInt("weeklyActions",0);
         s.restedThisWeek=p.getBoolean("restedThisWeek",false);
         s.savings=p.getLong("savings",0L);
+        s.businessLevel=p.getInt("businessLevel",0);
+        s.reputation=p.getInt("reputation",10);
+        s.workCount=p.getInt("workCount",0);
+        s.studyCount=p.getInt("studyCount",0);
+        s.socialCount=p.getInt("socialCount",0);
+        s.contentCount=p.getInt("contentCount",0);
+        s.workoutCount=p.getInt("workoutCount",0);
+        s.quest1Claimed=p.getBoolean("quest1Claimed",false);
+        s.quest2Claimed=p.getBoolean("quest2Claimed",false);
+        s.quest3Claimed=p.getBoolean("quest3Claimed",false);
         s.achEmergency=p.getBoolean("achEmergency",false);
         s.achDebtFree=p.getBoolean("achDebtFree",false);
         s.achInvestor=p.getBoolean("achInvestor",false);

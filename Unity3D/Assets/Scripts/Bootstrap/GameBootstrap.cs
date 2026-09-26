@@ -45,6 +45,8 @@ namespace MasirServat
             follow.SetTarget(player);
             PlayerMotor.I.SetCamera(cameraGo.transform);
 
+            gameObject.AddComponent<ObjectiveBeacon>();
+
             HUDController.I.Refresh();
             HUDController.I.Toast("به مسیر ثروت خوش اومدی\nبرو کافه و اولین شیفتت رو شروع کن");
         }

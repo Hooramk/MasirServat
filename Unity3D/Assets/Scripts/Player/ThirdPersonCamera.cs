@@ -4,12 +4,17 @@ namespace MasirServat
 {
     public sealed class ThirdPersonCamera : MonoBehaviour
     {
+        public static ThirdPersonCamera I { get; private set; }
+
         Transform target;
         Vector3 velocity;
+        float yaw = 18f;
+        float pitch = 20f;
 
-        // Fixed city-game camera. It does not orbit every time the player turns.
-        public Vector3 offset = new Vector3(0f, 12.5f, -14.5f);
-        public float smoothTime = 0.10f;
+        public float distance = 6.8f;
+        public float smoothTime = 0.08f;
+
+        void Awake() => I = this;
 
         public void SetTarget(Transform t)
         {
@@ -17,25 +22,36 @@ namespace MasirServat
             Snap();
         }
 
+        public void AddLook(Vector2 delta)
+        {
+            yaw += delta.x;
+            pitch = Mathf.Clamp(pitch - delta.y * 0.65f, 12f, 36f);
+        }
+
         void Snap()
         {
             if (target == null) return;
-            transform.position = target.position + offset;
-            transform.LookAt(target.position + Vector3.up * 1.0f);
+            Vector3 focus = target.position + Vector3.up * 1.25f;
+            Quaternion rot = Quaternion.Euler(pitch, yaw, 0);
+            transform.position = focus + rot * new Vector3(0, 0, -distance);
+            transform.LookAt(focus);
         }
 
         void LateUpdate()
         {
             if (target == null) return;
 
-            Vector3 wanted = target.position + offset;
+            Vector3 focus = target.position + Vector3.up * 1.25f;
+            Quaternion rot = Quaternion.Euler(pitch, yaw, 0);
+            Vector3 wanted = focus + rot * new Vector3(0, 0, -distance);
+
             transform.position = Vector3.SmoothDamp(
                 transform.position,
                 wanted,
                 ref velocity,
                 smoothTime
             );
-            transform.LookAt(target.position + Vector3.up * 1.0f);
+            transform.LookAt(focus);
         }
     }
 }

@@ -11,7 +11,7 @@ namespace MasirServat
 
         Canvas canvas;
         Font font;
-        Text moneyText, energyText, skillText, reputationText, missionText, promptText, toastText;
+        Text moneyText, energyText, skillText, reputationText, missionText, promptText, toastText, guideText;
         Button interactButton;
         Coroutine toastRoutine;
 
@@ -75,6 +75,11 @@ namespace MasirServat
             missionText.color = new Color(0.95f, 0.84f, 0.48f);
             SetRect(missionText.rectTransform, Vector2.zero, Vector2.one, new Vector2(14, 0), new Vector2(-14, 0));
 
+            guideText = Label("Guide", canvas.transform, "", 24, TextAnchor.MiddleCenter);
+            guideText.color = new Color(0.96f, 0.93f, 0.82f);
+            guideText.gameObject.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.78f);
+            SetRect(guideText.rectTransform, new Vector2(0.22f, 0), new Vector2(0.78f, 0), new Vector2(0, 250), new Vector2(0, 76), new Vector2(0.5f, 0));
+
             promptText = Label("Prompt", canvas.transform, "", 27, TextAnchor.MiddleCenter);
             promptText.color = Color.white;
             promptText.gameObject.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.65f);
@@ -124,23 +129,33 @@ namespace MasirServat
         {
             if (GameState.I == null) return;
             var d = GameState.I.Data;
-            moneyText.text = "💰 " + EconomySystem.FormatMoney(d.cash);
-            energyText.text = "⚡ " + d.energy + "/" + d.maxEnergy;
-            skillText.text = "🧠 " + d.skill;
-            reputationText.text = "⭐ " + d.reputation;
+            SetText(moneyText, "💰 " + EconomySystem.FormatMoney(d.cash));
+            SetText(energyText, "⚡ " + d.energy + "/" + d.maxEnergy);
+            SetText(skillText, "🧠 " + d.skill);
+            SetText(reputationText, "⭐ " + d.reputation);
 
             var dayText = canvas.transform.Find("TopBar/DayText")?.GetComponent<Text>();
-            if (dayText != null) dayText.text = "روز " + d.day;
+            if (dayText != null) SetText(dayText, "روز " + d.day);
 
             if (missionText != null && QuestSystem.I != null)
-                missionText.text = "ماموریت: " + QuestSystem.I.CurrentTitle;
+                SetText(missionText, "ماموریت: " + QuestSystem.I.CurrentTitle);
+
+            if (guideText != null)
+                SetText(guideText, GuideForStep(d.questStep));
         }
 
         public void SetPrompt(string text)
         {
             if (promptText == null) return;
-            promptText.text = string.IsNullOrEmpty(text) ? "" : "◉ " + text;
-            if (interactButton != null) interactButton.interactable = !string.IsNullOrEmpty(text);
+            SetText(promptText, string.IsNullOrEmpty(text) ? "" : "◉ " + text);
+
+            if (interactButton != null)
+            {
+                interactButton.interactable = true;
+                var label = interactButton.transform.Find("Label")?.GetComponent<Text>();
+                if (label != null)
+                    SetText(label, string.IsNullOrEmpty(text) ? "نزدیک‌تر شو" : "تعامل");
+            }
         }
 
         public void Toast(string message)
@@ -152,7 +167,7 @@ namespace MasirServat
 
         IEnumerator ToastRoutine(string message)
         {
-            toastText.text = message;
+            SetText(toastText, message);
             toastText.canvasRenderer.SetAlpha(1f);
             yield return new WaitForSeconds(2.4f);
             toastText.CrossFadeAlpha(0f, 0.35f, true);
@@ -178,7 +193,7 @@ namespace MasirServat
             go.transform.SetParent(parent, false);
             var t = go.GetComponent<Text>();
             t.font = font;
-            t.text = text;
+            t.text = PersianText.Fix(text);
             t.fontSize = size;
             t.alignment = anchor;
             t.color = Color.white;
@@ -203,6 +218,24 @@ namespace MasirServat
             label.color = Color.white;
             SetRect(label.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             return button;
+        }
+
+        static void SetText(Text target, string value)
+        {
+            if (target != null) target.text = PersianText.Fix(value);
+        }
+
+        static string GuideForStep(int step)
+        {
+            switch(step)
+            {
+                case 0: return "جوی‌استیک پایین چپ را حرکت بده؛ نشان «هدف» را تا کافه دنبال کن و نزدیک دایره طلایی «تعامل» را بزن.";
+                case 1: return "ماموریت بعدی: نشان «هدف» را تا دانشگاه دنبال کن.";
+                case 2: return "ماموریت بعدی: به بانک برو و ۲ میلیون تومان پس‌انداز کن.";
+                case 3: return "ماموریت بعدی: کنار موتور برو؛ «تعامل» را بزن و آن را بخر.";
+                case 4: return "ماموریت بعدی: به ملک خالی برو و اولین کسب‌وکارت را بساز.";
+                default: return "شهر باز است؛ کار کن، مهارت بگیر، خرید کن و کسب‌وکارت را بزرگ‌تر کن.";
+            }
         }
 
         static void SetRect(RectTransform rt, Vector2 anchorMin, Vector2 anchorMax, Vector2 anchoredPos, Vector2 size, Vector2? pivot = null)

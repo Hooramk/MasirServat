@@ -26,6 +26,7 @@ namespace MasirServat
             gameObject.AddComponent<QuestSystem>();
             gameObject.AddComponent<HUDController>();
             gameObject.AddComponent<JobMinigame>();
+            gameObject.AddComponent<TouchInputController>();
 
             var interaction = gameObject.AddComponent<WorldInteraction>();
             var city = gameObject.AddComponent<CityPrototypeBuilder>();
@@ -61,7 +62,7 @@ namespace MasirServat
             gameObject.AddComponent<ObjectiveBeacon>();
 
             HUDController.I.Refresh();
-            HUDController.I.Toast("به مسیر ثروت خوش اومدی\nنشان هدف را تا کافه دنبال کن");
+            HUDController.I.Toast("نیمه چپ صفحه حرکت • نیمه راست دوربین\nنشان هدف را دنبال کن");
         }
 
         GameObject CreateCamera()
@@ -70,8 +71,8 @@ namespace MasirServat
             if (existing != null)
             {
                 existing.clearFlags = CameraClearFlags.SolidColor;
-                existing.backgroundColor = new Color(0.47f, 0.68f, 0.86f);
-                existing.fieldOfView = 62;
+                existing.backgroundColor = new Color(0.42f, 0.67f, 0.86f);
+                existing.fieldOfView = 55;
                 existing.nearClipPlane = 0.15f;
                 existing.farClipPlane = 300;
                 return existing.gameObject;
@@ -80,11 +81,11 @@ namespace MasirServat
             var cameraGo = new GameObject("Main Camera");
             var camera = cameraGo.AddComponent<Camera>();
             camera.tag = "MainCamera";
-            camera.fieldOfView = 62;
+            camera.fieldOfView = 55;
             camera.nearClipPlane = 0.15f;
             camera.farClipPlane = 300;
             camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.47f, 0.68f, 0.86f);
+            camera.backgroundColor = new Color(0.42f, 0.67f, 0.86f);
             cameraGo.transform.position = new Vector3(-13.8f, 7.5f, -12f);
             cameraGo.transform.rotation = Quaternion.Euler(20f, 0f, 0f);
             cameraGo.AddComponent<AudioListener>();
@@ -101,15 +102,8 @@ namespace MasirServat
             controller.radius = 0.38f;
             controller.center = new Vector3(0, 0.9f, 0);
 
-            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "EmergencyBody";
-            body.transform.SetParent(root.transform, false);
-            body.transform.localPosition = new Vector3(0, 0.9f, 0);
-            body.transform.localScale = new Vector3(0.72f, 0.9f, 0.72f);
-            var collider = body.GetComponent<Collider>();
-            if (collider != null) UnityEngine.Object.Destroy(collider);
-
             root.AddComponent<PlayerMotor>();
+            root.AddComponent<PlayerVisual>();
             return root.transform;
         }
 

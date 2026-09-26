@@ -3,3 +3,4 @@ trigger 2 after package fix
 trigger 3 persian rtl and controls fix
 trigger 4 camera world visibility joystick fix
 trigger 4 world render fail-safe fix
+trigger 5 fix object ambiguity

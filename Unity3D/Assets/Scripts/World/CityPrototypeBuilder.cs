@@ -48,7 +48,7 @@ namespace MasirServat
             for (int i = 0; i < 8; i++)
                 CreateNPC(new Vector3(Random.Range(-20f, 20f), 1f, Random.Range(-12f, 20f)), i);
 
-            return CreatePlayer(new Vector3(0, 0.05f, -4));
+            return CreatePlayer(new Vector3(-13.4f, 0.05f, -2.5f));
         }
 
         void CreateGround()
@@ -252,8 +252,14 @@ namespace MasirServat
         {
             var shader = Shader.Find("Standard");
             if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
+            if (shader == null) shader = Shader.Find("Unlit/Color");
+
             var mat = new Material(shader);
             mat.color = color;
+
+            if (mat.HasProperty("_Glossiness"))
+                mat.SetFloat("_Glossiness", 0.08f);
+
             return mat;
         }
     }

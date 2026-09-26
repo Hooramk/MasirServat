@@ -117,7 +117,7 @@ namespace MasirServat
             var sign = new GameObject("Sign");
             sign.transform.position = pos + new Vector3(0, scale.y * 0.15f, -scale.z * 0.52f);
             var tm = sign.AddComponent<TextMesh>();
-            tm.text = label;
+            tm.text = PersianText.Fix(label);
             tm.fontSize = 60;
             tm.characterSize = 0.09f;
             tm.anchor = TextAnchor.MiddleCenter;

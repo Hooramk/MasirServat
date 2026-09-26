@@ -48,7 +48,7 @@ namespace MasirServat
             for (int i = 0; i < 8; i++)
                 CreateNPC(new Vector3(Random.Range(-20f, 20f), 1f, Random.Range(-12f, 20f)), i);
 
-            return CreatePlayer(new Vector3(-13.4f, 0.05f, -2.5f));
+            return CreatePlayer(new Vector3(-13.8f, 0.05f, -2.5f));
         }
 
         void CreateGround()

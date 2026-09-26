@@ -8,7 +8,7 @@ namespace MasirServat
 
         Transform player;
         Interactable nearest;
-        public float range = 3.2f;
+        public float range = 4.6f;
 
         void Awake() => I = this;
         public void SetPlayer(Transform p) => player = p;
@@ -38,7 +38,12 @@ namespace MasirServat
 
         public void Interact()
         {
-            nearest?.Interact();
+            if (nearest == null)
+            {
+                HUDController.I?.Toast("اول به یکی از دایره‌های طلایی نزدیک شو");
+                return;
+            }
+            nearest.Interact();
         }
     }
 }

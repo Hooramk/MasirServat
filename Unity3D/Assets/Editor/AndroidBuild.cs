@@ -11,8 +11,8 @@ namespace MasirServat.Editor
         {
             PlayerSettings.productName = "Masir Servat";
             PlayerSettings.companyName = "Hooram Gostar Maham";
-            PlayerSettings.bundleVersion = "1.0.1-alpha";
-            PlayerSettings.Android.bundleVersionCode = 2;
+            PlayerSettings.bundleVersion = "1.0.2-alpha";
+            PlayerSettings.Android.bundleVersionCode = 3;
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
             PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, "ir.masirservat.game");
 

@@ -111,8 +111,8 @@ namespace MasirServat
 
             float width = track.rect.width > 0 ? track.rect.width : 610;
             target.anchoredPosition = new Vector2((targetCenter - 0.5f) * width, 0);
-            roundText.text = jobTitle + "  ·  راند " + round + " از ۳";
-            scoreText.text = "در لحظه مناسب توقف را بزن";
+            roundText.text = PersianText.Fix(jobTitle + "  ·  راند " + round + " از ۳");
+            scoreText.text = PersianText.Fix("در لحظه مناسب توقف را بزن");
             stopButton.interactable = true;
         }
 
@@ -124,7 +124,7 @@ namespace MasirServat
             float distance = Mathf.Abs(marker01 - targetCenter);
             int score = Mathf.Clamp(Mathf.RoundToInt(100 - distance * 185f), 20, 100);
             totalScore += score;
-            scoreText.text = "امتیاز راند: " + score;
+            scoreText.text = PersianText.Fix("امتیاز راند: " + score);
 
             if (round >= 3)
             {
@@ -170,7 +170,7 @@ namespace MasirServat
 
             var t = go.GetComponent<Text>();
             t.font = UIFontProvider.Get();
-            t.text = value;
+            t.text = PersianText.Fix(value);
             t.fontSize = size;
             t.color = Color.white;
             t.alignment = TextAnchor.MiddleCenter;

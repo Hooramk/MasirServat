@@ -9,7 +9,7 @@ namespace MasirServat
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void AutoBoot()
         {
-            if (Object.FindFirstObjectByType<GameBootstrap>() != null) return;
+            if (UnityEngine.Object.FindFirstObjectByType<GameBootstrap>() != null) return;
             new GameObject("GameBootstrap").AddComponent<GameBootstrap>();
         }
 
@@ -107,7 +107,7 @@ namespace MasirServat
             body.transform.localPosition = new Vector3(0, 0.9f, 0);
             body.transform.localScale = new Vector3(0.72f, 0.9f, 0.72f);
             var collider = body.GetComponent<Collider>();
-            if (collider != null) Destroy(collider);
+            if (collider != null) UnityEngine.Object.Destroy(collider);
 
             root.AddComponent<PlayerMotor>();
             return root.transform;
@@ -115,7 +115,7 @@ namespace MasirServat
 
         void EnsureEventSystem()
         {
-            if (Object.FindFirstObjectByType<EventSystem>() != null) return;
+            if (UnityEngine.Object.FindFirstObjectByType<EventSystem>() != null) return;
             var eventSystem = new GameObject("EventSystem");
             eventSystem.AddComponent<EventSystem>();
             eventSystem.AddComponent<StandaloneInputModule>();

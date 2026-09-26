@@ -200,29 +200,12 @@ namespace MasirServat
             root.transform.position = pos;
 
             var cc = root.AddComponent<CharacterController>();
-            cc.height = 1.8f;
-            cc.radius = 0.38f;
-            cc.center = new Vector3(0, 0.9f, 0);
-
-            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "Body";
-            body.transform.SetParent(root.transform, false);
-            body.transform.localPosition = new Vector3(0, 0.9f, 0);
-            body.transform.localScale = new Vector3(0.72f, 0.9f, 0.72f);
-            var bodyCollider = body.GetComponent<Collider>();
-            if (bodyCollider != null) Destroy(bodyCollider);
-            Tint(body, new Color(0.04f, 0.16f, 0.28f));
-
-            var head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            head.name = "Head";
-            head.transform.SetParent(root.transform, false);
-            head.transform.localPosition = new Vector3(0, 1.82f, 0);
-            head.transform.localScale = Vector3.one * 0.48f;
-            var headCollider = head.GetComponent<Collider>();
-            if (headCollider != null) Destroy(headCollider);
-            Tint(head, new Color(0.76f, 0.55f, 0.40f));
+            cc.height = 2.08f;
+            cc.radius = 0.34f;
+            cc.center = new Vector3(0, 1.04f, 0);
 
             root.AddComponent<PlayerMotor>();
+            root.AddComponent<PlayerVisual>();
             return root.transform;
         }
 

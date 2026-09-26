@@ -36,9 +36,11 @@ namespace MasirServat
             var cameraGo = new GameObject("Main Camera");
             var camera = cameraGo.AddComponent<Camera>();
             camera.tag = "MainCamera";
-            camera.fieldOfView = 58;
+            camera.fieldOfView = 62;
             camera.nearClipPlane = 0.15f;
-            camera.farClipPlane = 250;
+            camera.farClipPlane = 300;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.47f, 0.68f, 0.86f);
             cameraGo.AddComponent<AudioListener>();
 
             var follow = cameraGo.AddComponent<ThirdPersonCamera>();
@@ -61,6 +63,7 @@ namespace MasirServat
 
         void CreateLighting()
         {
+            RenderSettings.fog = false;
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
             RenderSettings.ambientSkyColor = new Color(0.56f, 0.67f, 0.78f);
             RenderSettings.ambientEquatorColor = new Color(0.45f, 0.47f, 0.43f);
@@ -70,7 +73,7 @@ namespace MasirServat
             sunGo.transform.rotation = Quaternion.Euler(48, -28, 0);
             var light = sunGo.AddComponent<Light>();
             light.type = LightType.Directional;
-            light.intensity = 1.25f;
+            light.intensity = 1.65f;
             light.color = new Color(1f, 0.94f, 0.82f);
             light.shadows = LightShadows.Soft;
         }

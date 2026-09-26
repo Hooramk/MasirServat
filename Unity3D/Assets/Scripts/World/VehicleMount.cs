@@ -18,9 +18,12 @@ namespace MasirServat
         {
             var renderer = GetComponentInChildren<Renderer>();
             if (renderer != null)
-                renderer.material.color = GameState.I != null && GameState.I.Data.hasScooter
-                    ? new Color(0.08f, 0.35f, 0.65f)
-                    : new Color(0.42f, 0.44f, 0.46f);
+                SafeMaterial.Apply(
+                    renderer,
+                    GameState.I != null && GameState.I.Data.hasScooter
+                        ? new Color(0.08f, 0.35f, 0.65f)
+                        : new Color(0.42f, 0.44f, 0.46f)
+                );
         }
 
         public void Use()

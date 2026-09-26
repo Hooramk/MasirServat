@@ -78,20 +78,13 @@ namespace MasirServat
 
         static void Tint(GameObject go, Color color)
         {
-            var renderer = go.GetComponent<Renderer>();
-            if (renderer == null) return;
-
-            // Do not Shader.Find / new Material(shader) at runtime. On Android,
-            // stripped shaders can return null and previously aborted world creation.
             try
             {
-                var material = renderer.material;
-                if (material != null && material.HasProperty("_Color"))
-                    material.color = color;
+                SafeMaterial.Apply(go, color);
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("Tint skipped for " + go.name + ": " + ex.Message);
+                Debug.LogWarning("Safe material skipped for " + go.name + ": " + ex.Message);
             }
         }
 

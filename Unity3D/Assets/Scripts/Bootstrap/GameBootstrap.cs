@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -25,13 +26,56 @@ namespace MasirServat
             gameObject.AddComponent<QuestSystem>();
             gameObject.AddComponent<HUDController>();
             gameObject.AddComponent<JobMinigame>();
+
             var interaction = gameObject.AddComponent<WorldInteraction>();
             var city = gameObject.AddComponent<CityPrototypeBuilder>();
 
             CreateLighting();
+            var cameraGo = CreateCamera();
 
-            Transform player = city.Build();
+            Transform player = null;
+
+            try
+            {
+                player = city.Build();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("WORLD_BUILD_FATAL\n" + ex);
+            }
+
+            if (player == null)
+            {
+                player = CreateEmergencyPlayer();
+                HUDController.I?.Toast("بخشی از شهر بارگذاری نشد؛ کنترل کاراکتر فعال ماند");
+            }
+
             interaction.SetPlayer(player);
+
+            var follow = cameraGo.AddComponent<ThirdPersonCamera>();
+            follow.SetTarget(player);
+
+            if (PlayerMotor.I != null)
+                PlayerMotor.I.SetCamera(cameraGo.transform);
+
+            gameObject.AddComponent<ObjectiveBeacon>();
+
+            HUDController.I.Refresh();
+            HUDController.I.Toast("به مسیر ثروت خوش اومدی\nنشان هدف را تا کافه دنبال کن");
+        }
+
+        GameObject CreateCamera()
+        {
+            var existing = Camera.main;
+            if (existing != null)
+            {
+                existing.clearFlags = CameraClearFlags.SolidColor;
+                existing.backgroundColor = new Color(0.47f, 0.68f, 0.86f);
+                existing.fieldOfView = 62;
+                existing.nearClipPlane = 0.15f;
+                existing.farClipPlane = 300;
+                return existing.gameObject;
+            }
 
             var cameraGo = new GameObject("Main Camera");
             var camera = cameraGo.AddComponent<Camera>();
@@ -41,16 +85,32 @@ namespace MasirServat
             camera.farClipPlane = 300;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.47f, 0.68f, 0.86f);
+            cameraGo.transform.position = new Vector3(-13.8f, 7.5f, -12f);
+            cameraGo.transform.rotation = Quaternion.Euler(20f, 0f, 0f);
             cameraGo.AddComponent<AudioListener>();
+            return cameraGo;
+        }
 
-            var follow = cameraGo.AddComponent<ThirdPersonCamera>();
-            follow.SetTarget(player);
-            PlayerMotor.I.SetCamera(cameraGo.transform);
+        Transform CreateEmergencyPlayer()
+        {
+            var root = new GameObject("Player");
+            root.transform.position = new Vector3(-13.8f, 0.05f, -2.5f);
 
-            gameObject.AddComponent<ObjectiveBeacon>();
+            var controller = root.AddComponent<CharacterController>();
+            controller.height = 1.8f;
+            controller.radius = 0.38f;
+            controller.center = new Vector3(0, 0.9f, 0);
 
-            HUDController.I.Refresh();
-            HUDController.I.Toast("به مسیر ثروت خوش اومدی\nبرو کافه و اولین شیفتت رو شروع کن");
+            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            body.name = "EmergencyBody";
+            body.transform.SetParent(root.transform, false);
+            body.transform.localPosition = new Vector3(0, 0.9f, 0);
+            body.transform.localScale = new Vector3(0.72f, 0.9f, 0.72f);
+            var collider = body.GetComponent<Collider>();
+            if (collider != null) Destroy(collider);
+
+            root.AddComponent<PlayerMotor>();
+            return root.transform;
         }
 
         void EnsureEventSystem()

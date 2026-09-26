@@ -163,10 +163,9 @@ namespace MasirServat
             InteractionType type, string prompt, bool awning)
         {
             var root = new GameObject(name);
-            root.transform.position = Vector3.zero;
+            root.transform.position = pos;
 
             var body = Box(name + "_Body", pos, scale, color, root.transform);
-            body.name = name;
 
             Box(name + "_Roof", pos + Vector3.up * (scale.y * 0.55f),
                 new Vector3(scale.x * 1.05f, 0.35f, scale.z * 1.05f), color * 0.82f, root.transform);

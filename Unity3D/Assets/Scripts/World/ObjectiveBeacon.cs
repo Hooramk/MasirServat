@@ -19,8 +19,7 @@ namespace MasirServat
             diamond.transform.rotation = Quaternion.Euler(45,45,45);
             var col=diamond.GetComponent<Collider>();
             if(col!=null) Destroy(col);
-            var r=diamond.GetComponent<Renderer>();
-            r.material.color=new Color(0.95f,0.72f,0.18f);
+            SafeMaterial.Apply(diamond, new Color(0.95f,0.72f,0.18f));
 
             var go=new GameObject("ObjectiveLabel");
             go.transform.SetParent(transform,false);

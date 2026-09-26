@@ -78,7 +78,7 @@ namespace MasirServat
             guideText = Label("Guide", canvas.transform, "", 24, TextAnchor.MiddleCenter);
             guideText.color = new Color(0.96f, 0.93f, 0.82f);
             guideText.gameObject.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.78f);
-            SetRect(guideText.rectTransform, new Vector2(0.22f, 0), new Vector2(0.78f, 0), new Vector2(0, 250), new Vector2(0, 76), new Vector2(0.5f, 0));
+            SetRect(guideText.rectTransform, new Vector2(0.20f, 0), new Vector2(0.80f, 0), new Vector2(0, 235), new Vector2(0, 58), new Vector2(0.5f, 0));
 
             promptText = Label("Prompt", canvas.transform, "", 27, TextAnchor.MiddleCenter);
             promptText.color = Color.white;
@@ -109,7 +109,9 @@ namespace MasirServat
             baseRt.sizeDelta = new Vector2(230, 230);
 
             var baseImage = baseGo.GetComponent<Image>();
+            baseImage.sprite = Resources.GetBuiltinResource<Sprite>("UI/Skin/Knob.psd");
             baseImage.color = new Color(0.03f, 0.08f, 0.14f, 0.58f);
+            baseImage.preserveAspect = true;
 
             var knobGo = new GameObject("Knob", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
             knobGo.transform.SetParent(baseGo.transform, false);
@@ -118,7 +120,10 @@ namespace MasirServat
             knobRt.pivot = new Vector2(0.5f, 0.5f);
             knobRt.anchoredPosition = Vector2.zero;
             knobRt.sizeDelta = new Vector2(94, 94);
-            knobGo.GetComponent<Image>().color = new Color(0.88f, 0.90f, 0.92f, 0.82f);
+            var knobImage = knobGo.GetComponent<Image>();
+            knobImage.sprite = Resources.GetBuiltinResource<Sprite>("UI/Skin/Knob.psd");
+            knobImage.color = new Color(0.88f, 0.90f, 0.92f, 0.88f);
+            knobImage.preserveAspect = true;
 
             var joystick = baseGo.AddComponent<VirtualJoystick>();
             joystick.knob = knobRt;

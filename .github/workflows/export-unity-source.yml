@@ -1,0 +1,36 @@
+name: Export Unity Source
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/unity-source-trigger.txt'
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Unity source
+        uses: actions/checkout@v4
+        with:
+          ref: unity3d-rebuild
+
+      - name: Package Unity project
+        shell: bash
+        run: |
+          set -e
+          mkdir -p export/MasirServat-Unity
+          cp -R Unity3D/Assets export/MasirServat-Unity/
+          cp -R Unity3D/Packages export/MasirServat-Unity/
+          cp -R Unity3D/ProjectSettings export/MasirServat-Unity/
+          cd export
+          zip -r MasirServat-Unity-Source.zip MasirServat-Unity >/dev/null
+
+      - name: Upload Unity source
+        uses: actions/upload-artifact@v4
+        with:
+          name: MasirServat-Unity-Source
+          path: export/MasirServat-Unity-Source.zip
+          if-no-files-found: error

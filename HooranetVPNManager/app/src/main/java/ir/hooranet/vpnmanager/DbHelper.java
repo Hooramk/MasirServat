@@ -9,16 +9,23 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class DbHelper extends SQLiteOpenHelper {
-    public DbHelper(Context c) { super(c, "hooranet_vpn.db", null, 1); }
+    public DbHelper(Context c) { super(c, "hooranet_vpn.db", null, 2); }
 
     @Override public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE clients (_id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,username TEXT NOT NULL UNIQUE,vpn_type TEXT,server_name TEXT,start_jalali TEXT,expiry_jalali TEXT,start_epoch INTEGER,expiry_epoch INTEGER,amount INTEGER DEFAULT 0,paid INTEGER DEFAULT 1,notes TEXT,created_at INTEGER)");
         db.execSQL("CREATE TABLE renewals (_id INTEGER PRIMARY KEY AUTOINCREMENT,client_id INTEGER,old_expiry_jalali TEXT,new_expiry_jalali TEXT,amount INTEGER DEFAULT 0,paid INTEGER DEFAULT 1,created_at INTEGER)");
+        db.execSQL("CREATE TABLE permanent_customers (_id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,created_at INTEGER,updated_at INTEGER)");
+        db.execSQL("CREATE UNIQUE INDEX idx_permanent_customers_phone ON permanent_customers(phone) WHERE phone IS NOT NULL AND phone <> '';");
         db.execSQL("CREATE INDEX idx_clients_expiry ON clients(expiry_epoch)");
         db.execSQL("CREATE INDEX idx_clients_name ON clients(name)");
     }
 
-    @Override public void onUpgrade(SQLiteDatabase db, int oldV, int newV) {}
+    @Override public void onUpgrade(SQLiteDatabase db, int oldV, int newV) {
+        if(oldV < 2){
+            db.execSQL("CREATE TABLE IF NOT EXISTS permanent_customers (_id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,created_at INTEGER,updated_at INTEGER)");
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_permanent_customers_phone ON permanent_customers(phone) WHERE phone IS NOT NULL AND phone <> '';");
+        }
+    }
 
     public long saveClient(Long id, String name, String phone, String username, String type,
                            String server, String start, String expiry, long startEpoch, long expiryEpoch,
@@ -61,6 +68,57 @@ public class DbHelper extends SQLiteOpenHelper {
     public int renewalCount(long id) {
         Cursor c=getReadableDatabase().rawQuery("SELECT COUNT(*) FROM renewals WHERE client_id=?", new String[]{String.valueOf(id)});
         c.moveToFirst(); int n=c.getInt(0); c.close(); return n;
+    }
+
+    public long savePermanentCustomer(Long id, String name, String phone) {
+        String n=name==null?"":name.trim();
+        String p=phone==null?"":phone.trim();
+        if(n.isEmpty()) throw new IllegalArgumentException("نام مشتری اجباری است");
+
+        SQLiteDatabase db=getWritableDatabase();
+        ContentValues v=new ContentValues();
+        v.put("name",n);
+        v.put("phone",p);
+        v.put("updated_at",System.currentTimeMillis());
+
+        if(id!=null){
+            db.update("permanent_customers",v,"_id=?",new String[]{String.valueOf(id)});
+            return id;
+        }
+
+        if(!p.isEmpty()){
+            Cursor c=db.rawQuery("SELECT _id FROM permanent_customers WHERE phone=? LIMIT 1",new String[]{p});
+            if(c.moveToFirst()){
+                long existing=c.getLong(0);
+                c.close();
+                db.update("permanent_customers",v,"_id=?",new String[]{String.valueOf(existing)});
+                return existing;
+            }
+            c.close();
+        }
+
+        Cursor same=db.rawQuery("SELECT _id FROM permanent_customers WHERE name=? AND IFNULL(phone,'')=? LIMIT 1",new String[]{n,p});
+        if(same.moveToFirst()){
+            long existing=same.getLong(0);
+            same.close();
+            return existing;
+        }
+        same.close();
+
+        v.put("created_at",System.currentTimeMillis());
+        return db.insertOrThrow("permanent_customers",null,v);
+    }
+
+    public Cursor listPermanentCustomers() {
+        return getReadableDatabase().rawQuery("SELECT * FROM permanent_customers ORDER BY name COLLATE NOCASE ASC",null);
+    }
+
+    public Cursor getPermanentCustomer(long id) {
+        return getReadableDatabase().rawQuery("SELECT * FROM permanent_customers WHERE _id=?",new String[]{String.valueOf(id)});
+    }
+
+    public void deletePermanentCustomer(long id) {
+        getWritableDatabase().delete("permanent_customers","_id=?",new String[]{String.valueOf(id)});
     }
 
     public void deleteClient(long id) {
@@ -115,6 +173,7 @@ public class DbHelper extends SQLiteOpenHelper {
         root.put("exported_at",System.currentTimeMillis());
         root.put("clients",tableToJson("clients"));
         root.put("renewals",tableToJson("renewals"));
+        root.put("permanent_customers",tableToJson("permanent_customers"));
         return root.toString(2);
     }
 
@@ -122,11 +181,13 @@ public class DbHelper extends SQLiteOpenHelper {
         JSONObject root=new JSONObject(json);
         JSONArray clients=root.getJSONArray("clients");
         JSONArray renewals=root.optJSONArray("renewals");
+        JSONArray permanentCustomers=root.optJSONArray("permanent_customers");
         SQLiteDatabase db=getWritableDatabase();
         db.beginTransaction();
         try{
             db.delete("renewals",null,null);
             db.delete("clients",null,null);
+            db.delete("permanent_customers",null,null);
             for(int i=0;i<clients.length();i++){
                 ContentValues v=jsonValues(clients.getJSONObject(i));
                 db.insertOrThrow("clients",null,v);
@@ -135,6 +196,12 @@ public class DbHelper extends SQLiteOpenHelper {
                 for(int i=0;i<renewals.length();i++){
                     ContentValues v=jsonValues(renewals.getJSONObject(i));
                     db.insert("renewals",null,v);
+                }
+            }
+            if(permanentCustomers!=null){
+                for(int i=0;i<permanentCustomers.length();i++){
+                    ContentValues v=jsonValues(permanentCustomers.getJSONObject(i));
+                    db.insert("permanent_customers",null,v);
                 }
             }
             db.setTransactionSuccessful();

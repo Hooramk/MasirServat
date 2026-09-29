@@ -9,11 +9,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class DbHelper extends SQLiteOpenHelper {
-    public DbHelper(Context c) { super(c, "hooranet_vpn.db", null, 2); }
+    public DbHelper(Context c) { super(c, "hooranet_vpn.db", null, 3); }
 
     @Override public void onCreate(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE clients (_id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,username TEXT NOT NULL UNIQUE,vpn_type TEXT,server_name TEXT,start_jalali TEXT,expiry_jalali TEXT,start_epoch INTEGER,expiry_epoch INTEGER,amount INTEGER DEFAULT 0,paid INTEGER DEFAULT 1,notes TEXT,created_at INTEGER)");
-        db.execSQL("CREATE TABLE renewals (_id INTEGER PRIMARY KEY AUTOINCREMENT,client_id INTEGER,old_expiry_jalali TEXT,new_expiry_jalali TEXT,amount INTEGER DEFAULT 0,paid INTEGER DEFAULT 1,created_at INTEGER)");
+        db.execSQL("CREATE TABLE clients (_id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,username TEXT NOT NULL UNIQUE,vpn_type TEXT,server_name TEXT,start_jalali TEXT,expiry_jalali TEXT,start_epoch INTEGER,expiry_epoch INTEGER,amount INTEGER DEFAULT 0,purchase_cost INTEGER DEFAULT 0,paid INTEGER DEFAULT 1,notes TEXT,created_at INTEGER)");
+        db.execSQL("CREATE TABLE renewals (_id INTEGER PRIMARY KEY AUTOINCREMENT,client_id INTEGER,old_expiry_jalali TEXT,new_expiry_jalali TEXT,amount INTEGER DEFAULT 0,purchase_cost INTEGER DEFAULT 0,paid INTEGER DEFAULT 1,created_at INTEGER)");
         db.execSQL("CREATE TABLE permanent_customers (_id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,created_at INTEGER,updated_at INTEGER)");
         db.execSQL("CREATE UNIQUE INDEX idx_permanent_customers_phone ON permanent_customers(phone) WHERE phone IS NOT NULL AND phone <> '';");
         db.execSQL("CREATE INDEX idx_clients_expiry ON clients(expiry_epoch)");
@@ -25,17 +25,21 @@ public class DbHelper extends SQLiteOpenHelper {
             db.execSQL("CREATE TABLE IF NOT EXISTS permanent_customers (_id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,created_at INTEGER,updated_at INTEGER)");
             db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_permanent_customers_phone ON permanent_customers(phone) WHERE phone IS NOT NULL AND phone <> '';");
         }
+        if(oldV < 3){
+            db.execSQL("ALTER TABLE clients ADD COLUMN purchase_cost INTEGER DEFAULT 0");
+            db.execSQL("ALTER TABLE renewals ADD COLUMN purchase_cost INTEGER DEFAULT 0");
+        }
     }
 
     public long saveClient(Long id, String name, String phone, String username, String type,
                            String server, String start, String expiry, long startEpoch, long expiryEpoch,
-                           long amount, boolean paid, String notes) {
+                           long amount, long purchaseCost, boolean paid, String notes) {
         ContentValues v = new ContentValues();
         v.put("name", name.trim()); v.put("phone", phone.trim()); v.put("username", username.trim());
         v.put("vpn_type", type); v.put("server_name", server.trim());
         v.put("start_jalali", start); v.put("expiry_jalali", expiry);
         v.put("start_epoch", startEpoch); v.put("expiry_epoch", expiryEpoch);
-        v.put("amount", amount); v.put("paid", paid ? 1 : 0); v.put("notes", notes.trim());
+        v.put("amount", amount); v.put("purchase_cost", purchaseCost); v.put("paid", paid ? 1 : 0); v.put("notes", notes.trim());
         if (id == null) v.put("created_at", System.currentTimeMillis());
         SQLiteDatabase db = getWritableDatabase();
         if (id == null) return db.insertOrThrow("clients", null, v);
@@ -63,6 +67,15 @@ public class DbHelper extends SQLiteOpenHelper {
     public long sumRevenue() {
         Cursor c=getReadableDatabase().rawQuery("SELECT COALESCE((SELECT SUM(amount) FROM clients),0)+COALESCE((SELECT SUM(amount) FROM renewals),0)", null);
         c.moveToFirst(); long n=c.getLong(0); c.close(); return n;
+    }
+
+    public long sumPurchase() {
+        Cursor c=getReadableDatabase().rawQuery("SELECT COALESCE((SELECT SUM(purchase_cost) FROM clients),0)+COALESCE((SELECT SUM(purchase_cost) FROM renewals),0)", null);
+        c.moveToFirst(); long n=c.getLong(0); c.close(); return n;
+    }
+
+    public long sumProfit() {
+        return sumRevenue()-sumPurchase();
     }
 
     public int renewalCount(long id) {
@@ -127,7 +140,7 @@ public class DbHelper extends SQLiteOpenHelper {
         db.delete("clients","_id=?",new String[]{String.valueOf(id)});
     }
 
-    public void renew(long id, int months, long amount, boolean paid) {
+    public void renew(long id, int months, long amount, long purchaseCost, boolean paid) {
         Cursor c=getClient(id);
         if(!c.moveToFirst()){ c.close(); return; }
         long oldEpoch=c.getLong(c.getColumnIndexOrThrow("expiry_epoch"));
@@ -144,7 +157,7 @@ public class DbHelper extends SQLiteOpenHelper {
 
         ContentValues r=new ContentValues();
         r.put("client_id",id); r.put("old_expiry_jalali",oldJ); r.put("new_expiry_jalali",newJ);
-        r.put("amount",amount); r.put("paid",paid?1:0); r.put("created_at",System.currentTimeMillis());
+        r.put("amount",amount); r.put("purchase_cost",purchaseCost); r.put("paid",paid?1:0); r.put("created_at",System.currentTimeMillis());
         db.insert("renewals",null,r);
     }
 
@@ -169,7 +182,7 @@ public class DbHelper extends SQLiteOpenHelper {
 
     public String exportJson() throws Exception {
         JSONObject root=new JSONObject();
-        root.put("version",1);
+        root.put("version",2);
         root.put("exported_at",System.currentTimeMillis());
         root.put("clients",tableToJson("clients"));
         root.put("renewals",tableToJson("renewals"));

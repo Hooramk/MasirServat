@@ -183,8 +183,18 @@ public class MainActivity extends Activity {
         finance.addView(profitTotal);
 
         LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);
-        rp.setMargins(0,dp(10),0,dp(12));
+        rp.setMargins(0,dp(10),0,dp(10));
         content.addView(finance,rp);
+
+        Button monthlyReport=btn("گزارش مالی ماهانه");
+        monthlyReport.setBackground(bg(GOLD,12));
+        LinearLayout.LayoutParams mrp=new LinearLayout.LayoutParams(-1,dp(50));
+        mrp.setMargins(0,0,0,dp(12));
+        content.addView(monthlyReport,mrp);
+        monthlyReport.setOnClickListener(v->{
+            int[] ym=PersianDateUtil.currentJalaliYearMonth();
+            showFinancialReport(ym[0],ym[1]);
+        });
 
         TextView h=tv("اشتراک‌های نیازمند پیگیری",18,NAVY,true);
         content.addView(h);
@@ -763,6 +773,84 @@ public class MainActivity extends Activity {
             });
         });
         dialog.show();
+    }
+
+    private void showFinancialReport(int year,int month){
+        shell("گزارش مالی ماهانه");
+
+        long from=PersianDateUtil.monthStart(year,month);
+        int[] next=PersianDateUtil.shiftMonth(year,month,1);
+        long to=PersianDateUtil.monthStart(next[0],next[1]);
+
+        long revenue=db.monthlyRevenue(from,to);
+        long purchase=db.monthlyPurchase(from,to);
+        long profit=db.monthlyProfit(from,to);
+        long unpaid=db.monthlyUnpaid(from,to);
+        int salesCount=db.monthlySalesCount(from,to);
+        int renewalCount=db.monthlyRenewalCount(from,to);
+        double margin=revenue>0?(profit*100.0/revenue):0.0;
+
+        LinearLayout monthNav=new LinearLayout(this);
+        monthNav.setOrientation(LinearLayout.HORIZONTAL);
+        monthNav.setGravity(Gravity.CENTER_VERTICAL);
+        monthNav.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+        Button prev=btn("ماه قبل");
+        Button nextBtn=btn("ماه بعد");
+        TextView title=tv(PersianDateUtil.monthTitle(year,month),18,NAVY,true);
+        title.setGravity(Gravity.CENTER);
+
+        int[] p=PersianDateUtil.shiftMonth(year,month,-1);
+        int[] n=PersianDateUtil.shiftMonth(year,month,1);
+        prev.setOnClickListener(v->showFinancialReport(p[0],p[1]));
+        nextBtn.setOnClickListener(v->showFinancialReport(n[0],n[1]));
+
+        LinearLayout.LayoutParams navBtn=new LinearLayout.LayoutParams(0,dp(46),1);
+        navBtn.setMargins(dp(3),0,dp(3),0);
+        monthNav.addView(nextBtn,navBtn);
+        monthNav.addView(title,new LinearLayout.LayoutParams(0,dp(46),1.4f));
+        monthNav.addView(prev,navBtn);
+        content.addView(monthNav);
+
+        Button current=btn("ماه جاری");
+        current.setBackground(bg(GOLD,12));
+        LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,dp(44));
+        cp.setMargins(0,dp(8),0,dp(12));
+        content.addView(current,cp);
+        current.setOnClickListener(v->{
+            int[] ym=PersianDateUtil.currentJalaliYearMonth();
+            showFinancialReport(ym[0],ym[1]);
+        });
+
+        LinearLayout financialBox=new LinearLayout(this);
+        financialBox.setOrientation(LinearLayout.VERTICAL);
+        financialBox.setBackground(bg(Color.WHITE,14));
+        financialBox.setPadding(dp(14),dp(12),dp(14),dp(12));
+        financialBox.setElevation(dp(2));
+
+        financialBox.addView(tv("فروش ماه:  "+money(revenue)+" تومان",16,NAVY,true));
+        financialBox.addView(tv("خرید ماه:  "+money(purchase)+" تومان",15,Color.DKGRAY,false));
+        financialBox.addView(tv("سود ماه:  "+money(profit)+" تومان",18,profit>=0?GREEN:RED,true));
+        financialBox.addView(tv("حاشیه سود:  "+String.format(Locale.US,"%.1f",margin)+"٪",15,profit>=0?GREEN:RED,true));
+        financialBox.addView(tv("پرداخت‌نشده:  "+money(unpaid)+" تومان",15,unpaid>0?RED:GREEN,true));
+
+        LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(-1,-2);
+        fp.setMargins(0,0,0,dp(12));
+        content.addView(financialBox,fp);
+
+        LinearLayout counts=new LinearLayout(this);
+        counts.setOrientation(LinearLayout.HORIZONTAL);
+        counts.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        counts.addView(card("فروش جدید",String.valueOf(salesCount),NAVY),new LinearLayout.LayoutParams(0,dp(105),1));
+        counts.addView(card("تمدید",String.valueOf(renewalCount),GOLD),new LinearLayout.LayoutParams(0,dp(105),1));
+        content.addView(counts);
+
+        TextView note=tv("گزارش بر اساس تاریخ ثبت فروش و تمدید محاسبه می‌شود. برای رکوردهای قدیمی که قیمت خرید وارد نشده، قیمت خرید صفر در نظر گرفته می‌شود.",13,Color.GRAY,false);
+        note.setBackground(bg(Color.WHITE,12));
+        note.setPadding(dp(12),dp(12),dp(12),dp(12));
+        LinearLayout.LayoutParams np=new LinearLayout.LayoutParams(-1,-2);
+        np.setMargins(0,dp(12),0,dp(10));
+        content.addView(note,np);
     }
 
     private void showBackup(){

@@ -112,8 +112,22 @@ public class MainActivity extends Activity {
         root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
 
         LinearLayout nav=new LinearLayout(this);
-        nav.setPadding(dp(8),dp(7),dp(8),dp(8));
+        final int navLeft=dp(8), navTop=dp(7), navRight=dp(8), navBottom=dp(8);
+        nav.setPadding(navLeft,navTop,navRight,navBottom);
         nav.setBackgroundColor(Color.WHITE);
+
+        // Android 15 / Samsung One UI can draw the app under the system navigation bar.
+        // Keep the bottom menu inside the safe area on both 3-button and gesture navigation.
+        nav.setOnApplyWindowInsetsListener((v,insets)->{
+            int bottomInset;
+            if(android.os.Build.VERSION.SDK_INT>=30){
+                bottomInset=insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
+            }else{
+                bottomInset=insets.getSystemWindowInsetBottom();
+            }
+            v.setPadding(navLeft,navTop,navRight,navBottom+bottomInset);
+            return insets;
+        });
 
         String[] n={"داشبورد","مشتریان","+ ثبت","پشتیبان"};
         for(int i=0;i<n.length;i++){
@@ -132,6 +146,7 @@ public class MainActivity extends Activity {
         }
         root.addView(nav);
         setContentView(root);
+        nav.requestApplyInsets();
     }
 
     private void showDashboard(){

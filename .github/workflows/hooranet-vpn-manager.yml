@@ -31,6 +31,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Preserve Android debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: hooranet-vpn-debug-keystore-v1
+
       - name: Use runner Android SDK
         shell: bash
         run: |

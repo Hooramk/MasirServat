@@ -172,12 +172,19 @@ public class MainActivity extends Activity {
         grid.addView(r2);
         content.addView(grid);
 
-        TextView revenue=tv("مجموع مبلغ ثبت‌شده:  "+money(db.sumRevenue())+" تومان",16,NAVY,true);
-        revenue.setBackground(bg(Color.WHITE,12));
-        revenue.setPadding(dp(14),dp(14),dp(14),dp(14));
+        LinearLayout finance=new LinearLayout(this);
+        finance.setOrientation(LinearLayout.VERTICAL);
+        finance.setBackground(bg(Color.WHITE,12));
+        finance.setPadding(dp(14),dp(10),dp(14),dp(10));
+
+        finance.addView(tv("جمع فروش:  "+money(db.sumRevenue())+" تومان",15,NAVY,true));
+        finance.addView(tv("جمع خرید:  "+money(db.sumPurchase())+" تومان",15,Color.DKGRAY,false));
+        TextView profitTotal=tv("سود کل:  "+money(db.sumProfit())+" تومان",17,db.sumProfit()>=0?GREEN:RED,true);
+        finance.addView(profitTotal);
+
         LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);
         rp.setMargins(0,dp(10),0,dp(12));
-        content.addView(revenue,rp);
+        content.addView(finance,rp);
 
         TextView h=tv("اشتراک‌های نیازمند پیگیری",18,NAVY,true);
         content.addView(h);
@@ -299,7 +306,25 @@ public class MainActivity extends Activity {
         EditText start=input("تاریخ شروع شمسی - مثال 1405/07/01");
         EditText expiry=input("تاریخ انقضا شمسی");
         EditText amount=input("مبلغ فروش (تومان)");
+        EditText purchaseCost=input("قیمت خرید (تومان)");
+        TextView profitPreview=tv("سود: ۰ تومان",15,GREEN,true);
+        profitPreview.setBackground(bg(Color.WHITE,10));
+        profitPreview.setPadding(dp(12),dp(10),dp(12),dp(10));
         EditText notes=input("توضیحات");
+
+        TextWatcher profitWatcher=new TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int st,int count,int after){}
+            public void onTextChanged(CharSequence s,int st,int before,int count){
+                long sale=parseMoney(amount.getText().toString());
+                long cost=parseMoney(purchaseCost.getText().toString());
+                long p=sale-cost;
+                profitPreview.setText("سود: "+money(p)+" تومان");
+                profitPreview.setTextColor(p>=0?GREEN:RED);
+            }
+            public void afterTextChanged(Editable e){}
+        };
+        amount.addTextChangedListener(profitWatcher);
+        purchaseCost.addTextChangedListener(profitWatcher);
 
         Button choosePermanent=btn("انتخاب مشتری ثابت");
         choosePermanent.setBackground(bg(GOLD,12));
@@ -367,6 +392,10 @@ public class MainActivity extends Activity {
         content.addView(durationRow);
         content.addView(expiry);
         content.addView(amount);
+        content.addView(purchaseCost);
+        LinearLayout.LayoutParams fp=new LinearLayout.LayoutParams(-1,dp(50));
+        fp.setMargins(0,0,0,dp(9));
+        content.addView(profitPreview,fp);
         content.addView(paid);
         content.addView(notes);
 
@@ -380,6 +409,7 @@ public class MainActivity extends Activity {
                 start.setText(c.getString(c.getColumnIndexOrThrow("start_jalali")));
                 expiry.setText(c.getString(c.getColumnIndexOrThrow("expiry_jalali")));
                 amount.setText(String.valueOf(c.getLong(c.getColumnIndexOrThrow("amount"))));
+                purchaseCost.setText(String.valueOf(c.getLong(c.getColumnIndexOrThrow("purchase_cost"))));
                 notes.setText(c.getString(c.getColumnIndexOrThrow("notes")));
                 setSpinner(type,c.getString(c.getColumnIndexOrThrow("vpn_type")));
                 paid.setSelection(c.getInt(c.getColumnIndexOrThrow("paid"))==1?0:1);
@@ -404,6 +434,7 @@ public class MainActivity extends Activity {
                 if(e<s)throw new Exception("تاریخ انقضا باید بعد از شروع باشد");
 
                 long money=parseMoney(amount.getText().toString());
+                long cost=parseMoney(purchaseCost.getText().toString());
 
                 db.saveClient(
                         id,
@@ -414,7 +445,7 @@ public class MainActivity extends Activity {
                         server.getText().toString(),
                         PersianDateUtil.format(s),
                         PersianDateUtil.format(e),
-                        s,e,money,
+                        s,e,money,cost,
                         paid.getSelectedItemPosition()==0,
                         notes.getText().toString()
                 );
@@ -472,6 +503,8 @@ public class MainActivity extends Activity {
         String expiry=c.getString(c.getColumnIndexOrThrow("expiry_jalali"));
         String notes=c.getString(c.getColumnIndexOrThrow("notes"));
         long amount=c.getLong(c.getColumnIndexOrThrow("amount"));
+        long purchaseCost=c.getLong(c.getColumnIndexOrThrow("purchase_cost"));
+        long profit=amount-purchaseCost;
         long expEpoch=c.getLong(c.getColumnIndexOrThrow("expiry_epoch"));
         boolean paid=c.getInt(c.getColumnIndexOrThrow("paid"))==1;
         c.close();
@@ -493,7 +526,9 @@ public class MainActivity extends Activity {
                 "شروع: "+start,
                 "انقضا: "+expiry,
                 "مانده: "+(days<0?"منقضی":days+" روز"),
-                "مبلغ: "+money(amount)+" تومان",
+                "مبلغ فروش: "+money(amount)+" تومان",
+                "قیمت خرید: "+money(purchaseCost)+" تومان",
+                "سود: "+money(profit)+" تومان",
                 "پرداخت: "+(paid?"شده":"نشده"),
                 "تعداد تمدید: "+renews,
                 "توضیحات: "+notes
@@ -543,7 +578,25 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(20),0,dp(20),0);
 
-        EditText amount=input("مبلغ تمدید (تومان)");
+        EditText amount=input("مبلغ فروش تمدید (تومان)");
+        EditText purchaseCost=input("قیمت خرید تمدید (تومان)");
+        TextView profitPreview=tv("سود تمدید: ۰ تومان",15,GREEN,true);
+        profitPreview.setBackground(bg(Color.WHITE,10));
+        profitPreview.setPadding(dp(12),dp(10),dp(12),dp(10));
+
+        TextWatcher renewalProfitWatcher=new TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int st,int count,int after){}
+            public void onTextChanged(CharSequence s,int st,int before,int count){
+                long sale=parseMoney(amount.getText().toString());
+                long cost=parseMoney(purchaseCost.getText().toString());
+                long p=sale-cost;
+                profitPreview.setText("سود تمدید: "+money(p)+" تومان");
+                profitPreview.setTextColor(p>=0?GREEN:RED);
+            }
+            public void afterTextChanged(Editable e){}
+        };
+        amount.addTextChangedListener(renewalProfitWatcher);
+        purchaseCost.addTextChangedListener(renewalProfitWatcher);
 
         Spinner months=new Spinner(this);
         months.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,
@@ -558,6 +611,8 @@ public class MainActivity extends Activity {
 
         box.addView(months);
         box.addView(amount);
+        box.addView(purchaseCost);
+        box.addView(profitPreview);
         box.addView(paid);
 
         new AlertDialog.Builder(this)
@@ -565,7 +620,7 @@ public class MainActivity extends Activity {
                 .setView(box)
                 .setPositiveButton("ثبت تمدید",(a,b)->{
                     int[] m={1,3,6};
-                    db.renew(id,m[months.getSelectedItemPosition()],parseMoney(amount.getText().toString()),paid.getSelectedItemPosition()==0);
+                    db.renew(id,m[months.getSelectedItemPosition()],parseMoney(amount.getText().toString()),parseMoney(purchaseCost.getText().toString()),paid.getSelectedItemPosition()==0);
                     toast("تمدید ثبت شد");
                     parent.dismiss();
                     showList("");

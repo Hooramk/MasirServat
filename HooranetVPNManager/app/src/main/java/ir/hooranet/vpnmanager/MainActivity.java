@@ -315,6 +315,32 @@ public class MainActivity extends Activity {
         choosePermanent.setOnClickListener(v->choosePermanentCustomer(name,phone));
 
         start.setText(PersianDateUtil.today());
+        setExpiryFromMonths(start,expiry,1);
+
+        TextView durationTitle=tv("مدت اشتراک",14,NAVY,true);
+        LinearLayout durationRow=new LinearLayout(this);
+        durationRow.setOrientation(LinearLayout.HORIZONTAL);
+        durationRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+        Button oneMonth=btn("۱ ماه");
+        Button threeMonths=btn("۳ ماه");
+        Button sixMonths=btn("۶ ماه");
+        oneMonth.setBackground(bg(GOLD,12));
+
+        Button[] durationButtons={oneMonth,threeMonths,sixMonths};
+        int[] durationValues={1,3,6};
+        for(int i=0;i<durationButtons.length;i++){
+            final int monthsValue=durationValues[i];
+            Button selectedButton=durationButtons[i];
+            selectedButton.setOnClickListener(v->{
+                for(Button x:durationButtons) x.setBackground(bg(NAVY,12));
+                selectedButton.setBackground(bg(GOLD,12));
+                setExpiryFromMonths(start,expiry,monthsValue);
+            });
+            LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(0,dp(46),1);
+            bp.setMargins(dp(3),0,dp(3),dp(9));
+            durationRow.addView(selectedButton,bp);
+        }
 
         Spinner type=new Spinner(this);
         type.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,
@@ -337,6 +363,8 @@ public class MainActivity extends Activity {
         content.addView(type);
         content.addView(server);
         content.addView(start);
+        content.addView(durationTitle);
+        content.addView(durationRow);
         content.addView(expiry);
         content.addView(amount);
         content.addView(paid);
@@ -401,6 +429,15 @@ public class MainActivity extends Activity {
                 alert("خطا",ex.getMessage());
             }
         });
+    }
+
+    private void setExpiryFromMonths(EditText start, EditText expiry, int months){
+        try{
+            long s=PersianDateUtil.parse(start.getText().toString());
+            expiry.setText(PersianDateUtil.format(PersianDateUtil.addMonths(s,months)));
+        }catch(Exception e){
+            alert("تاریخ شروع", "ابتدا تاریخ شروع را به شکل 1405/07/01 وارد کن.");
+        }
     }
 
     private void styleSpinner(Spinner s){
@@ -510,7 +547,7 @@ public class MainActivity extends Activity {
 
         Spinner months=new Spinner(this);
         months.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,
-                new String[]{"۱ ماه","۲ ماه","۳ ماه","۶ ماه","۱۲ ماه"}));
+                new String[]{"۱ ماه","۳ ماه","۶ ماه"}));
 
         Spinner paid=new Spinner(this);
         paid.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,
@@ -527,7 +564,7 @@ public class MainActivity extends Activity {
                 .setTitle("تمدید اشتراک")
                 .setView(box)
                 .setPositiveButton("ثبت تمدید",(a,b)->{
-                    int[] m={1,2,3,6,12};
+                    int[] m={1,3,6};
                     db.renew(id,m[months.getSelectedItemPosition()],parseMoney(amount.getText().toString()),paid.getSelectedItemPosition()==0);
                     toast("تمدید ثبت شد");
                     parent.dismiss();

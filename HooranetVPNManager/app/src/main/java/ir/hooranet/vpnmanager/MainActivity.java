@@ -207,6 +207,14 @@ public class MainActivity extends Activity {
 
     private void showList(String q){
         shell("مشتریان");
+
+        Button permanent=btn("مشتریان ثابت");
+        permanent.setBackground(bg(GOLD,12));
+        LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(-1,dp(50));
+        pp.setMargins(0,0,0,dp(10));
+        content.addView(permanent,pp);
+        permanent.setOnClickListener(v->showPermanentCustomers());
+
         search=input("جست‌وجو: نام، موبایل، یوزرنیم یا سرور");
         search.setText(q);
         content.addView(search);
@@ -293,6 +301,19 @@ public class MainActivity extends Activity {
         EditText amount=input("مبلغ فروش (تومان)");
         EditText notes=input("توضیحات");
 
+        Button choosePermanent=btn("انتخاب مشتری ثابت");
+        choosePermanent.setBackground(bg(GOLD,12));
+
+        CheckBox rememberPermanent=new CheckBox(this);
+        rememberPermanent.setText("ذخیره نام و موبایل در مشتریان ثابت");
+        rememberPermanent.setTextSize(14);
+        rememberPermanent.setTextColor(NAVY);
+        rememberPermanent.setGravity(Gravity.RIGHT);
+        rememberPermanent.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        rememberPermanent.setPadding(dp(6),dp(5),dp(6),dp(8));
+
+        choosePermanent.setOnClickListener(v->choosePermanentCustomer(name,phone));
+
         start.setText(PersianDateUtil.today());
 
         Spinner type=new Spinner(this);
@@ -306,8 +327,12 @@ public class MainActivity extends Activity {
         styleSpinner(type);
         styleSpinner(paid);
 
+        LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,dp(50));
+        cp.setMargins(0,0,0,dp(10));
+        content.addView(choosePermanent,cp);
         content.addView(name);
         content.addView(phone);
+        content.addView(rememberPermanent);
         content.addView(username);
         content.addView(type);
         content.addView(server);
@@ -366,7 +391,11 @@ public class MainActivity extends Activity {
                         notes.getText().toString()
                 );
 
-                toast("ذخیره شد");
+                if(rememberPermanent.isChecked()){
+                    db.savePermanentCustomer(null,name.getText().toString(),phone.getText().toString());
+                }
+
+                toast(rememberPermanent.isChecked()?"اشتراک و مشتری ثابت ذخیره شد":"ذخیره شد");
                 showList("");
             }catch(Exception ex){
                 alert("خطا",ex.getMessage());
@@ -508,10 +537,146 @@ public class MainActivity extends Activity {
                 .show();
     }
 
+    private void choosePermanentCustomer(EditText name, EditText phone){
+        Cursor c=db.listPermanentCustomers();
+        if(!c.moveToFirst()){
+            c.close();
+            new AlertDialog.Builder(this)
+                    .setTitle("مشتریان ثابت")
+                    .setMessage("هنوز مشتری ثابتی ذخیره نشده است.")
+                    .setPositiveButton("افزودن مشتری",(d,w)->permanentCustomerDialog(null))
+                    .setNegativeButton("بستن",null)
+                    .show();
+            return;
+        }
+
+        java.util.ArrayList<Long> ids=new java.util.ArrayList<>();
+        java.util.ArrayList<String> labels=new java.util.ArrayList<>();
+        do{
+            long id=c.getLong(c.getColumnIndexOrThrow("_id"));
+            String n=c.getString(c.getColumnIndexOrThrow("name"));
+            String p=c.getString(c.getColumnIndexOrThrow("phone"));
+            ids.add(id);
+            labels.add((p==null||p.trim().isEmpty())?n:(n+"   •   "+p));
+        }while(c.moveToNext());
+        c.close();
+
+        new AlertDialog.Builder(this)
+                .setTitle("انتخاب مشتری ثابت")
+                .setItems(labels.toArray(new String[0]),(d,which)->{
+                    Cursor x=db.getPermanentCustomer(ids.get(which));
+                    if(x.moveToFirst()){
+                        name.setText(x.getString(x.getColumnIndexOrThrow("name")));
+                        phone.setText(x.getString(x.getColumnIndexOrThrow("phone")));
+                    }
+                    x.close();
+                })
+                .setPositiveButton("مدیریت مشتریان",(d,w)->showPermanentCustomers())
+                .setNegativeButton("انصراف",null)
+                .show();
+    }
+
+    private void showPermanentCustomers(){
+        shell("مشتریان ثابت");
+
+        Button add=btn("+ افزودن مشتری ثابت");
+        add.setBackground(bg(GOLD,12));
+        LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(-1,dp(50));
+        ap.setMargins(0,0,0,dp(12));
+        content.addView(add,ap);
+        add.setOnClickListener(v->permanentCustomerDialog(null));
+
+        Cursor c=db.listPermanentCustomers();
+        int count=0;
+        while(c.moveToNext()){
+            count++;
+            long id=c.getLong(c.getColumnIndexOrThrow("_id"));
+            String name=c.getString(c.getColumnIndexOrThrow("name"));
+            String phone=c.getString(c.getColumnIndexOrThrow("phone"));
+
+            LinearLayout row=new LinearLayout(this);
+            row.setOrientation(LinearLayout.VERTICAL);
+            row.setPadding(dp(13),dp(11),dp(13),dp(11));
+            row.setBackground(bg(Color.WHITE,12));
+            row.setElevation(dp(1));
+
+            row.addView(tv(name,16,NAVY,true));
+            row.addView(tv((phone==null||phone.trim().isEmpty())?"بدون شماره موبایل":phone,13,Color.DKGRAY,false));
+
+            row.setOnClickListener(v->permanentCustomerDialog(id));
+            row.setOnLongClickListener(v->{
+                new AlertDialog.Builder(this)
+                        .setTitle("حذف مشتری ثابت")
+                        .setMessage("«"+name+"» از دفترچه مشتریان ثابت حذف شود؟\nاشتراک‌های ثبت‌شده او حذف نمی‌شوند.")
+                        .setPositiveButton("حذف",(a,b)->{
+                            db.deletePermanentCustomer(id);
+                            showPermanentCustomers();
+                        })
+                        .setNegativeButton("انصراف",null)
+                        .show();
+                return true;
+            });
+
+            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);
+            rp.setMargins(0,0,0,dp(9));
+            content.addView(row,rp);
+        }
+        c.close();
+
+        if(count==0){
+            TextView empty=tv("هنوز مشتری ثابتی ثبت نشده است.\nنام و موبایل مشتریان همیشگی را اینجا نگه دار.",15,Color.GRAY,false);
+            empty.setGravity(Gravity.CENTER);
+            empty.setPadding(dp(12),dp(35),dp(12),dp(35));
+            content.addView(empty);
+        }
+    }
+
+    private void permanentCustomerDialog(Long id){
+        LinearLayout box=new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(20),dp(5),dp(20),0);
+        box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+        EditText name=input("نام مشتری *");
+        EditText phone=input("شماره موبایل");
+        box.addView(name);
+        box.addView(phone);
+
+        if(id!=null){
+            Cursor c=db.getPermanentCustomer(id);
+            if(c.moveToFirst()){
+                name.setText(c.getString(c.getColumnIndexOrThrow("name")));
+                phone.setText(c.getString(c.getColumnIndexOrThrow("phone")));
+            }
+            c.close();
+        }
+
+        AlertDialog dialog=new AlertDialog.Builder(this)
+                .setTitle(id==null?"افزودن مشتری ثابت":"ویرایش مشتری ثابت")
+                .setView(box)
+                .setPositiveButton("ذخیره",null)
+                .setNegativeButton("انصراف",null)
+                .create();
+
+        dialog.setOnShowListener(x->{
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+                try{
+                    db.savePermanentCustomer(id,name.getText().toString(),phone.getText().toString());
+                    dialog.dismiss();
+                    toast("مشتری ثابت ذخیره شد");
+                    showPermanentCustomers();
+                }catch(Exception e){
+                    alert("خطا",e.getMessage());
+                }
+            });
+        });
+        dialog.show();
+    }
+
     private void showBackup(){
         shell("پشتیبان‌گیری");
 
-        TextView info=tv("اطلاعات فقط داخل گوشی ذخیره می‌شود. هر چند وقت یک‌بار فایل پشتیبان JSON بگیر و در جای امن نگه دار.",15,NAVY,false);
+        TextView info=tv("اطلاعات اشتراک‌ها و مشتریان ثابت داخل گوشی ذخیره می‌شود. هر چند وقت یک‌بار فایل پشتیبان JSON بگیر و در جای امن نگه دار.",15,NAVY,false);
         info.setBackground(bg(Color.WHITE,12));
         info.setPadding(dp(14),dp(14),dp(14),dp(14));
         content.addView(info);

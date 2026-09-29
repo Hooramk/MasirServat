@@ -8,6 +8,12 @@ on:
     paths:
       - 'HooranetVPNManager/**'
       - '.github/workflows/hooranet-vpn-manager.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'HooranetVPNManager/**'
+      - '.github/workflows/hooranet-vpn-manager.yml'
 
 jobs:
   build:

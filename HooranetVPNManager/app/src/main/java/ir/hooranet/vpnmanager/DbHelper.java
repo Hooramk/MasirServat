@@ -78,6 +78,47 @@ public class DbHelper extends SQLiteOpenHelper {
         return sumRevenue()-sumPurchase();
     }
 
+    private long scalarLong(String sql,String[] args){
+        Cursor c=getReadableDatabase().rawQuery(sql,args);
+        long n=0;
+        if(c.moveToFirst()) n=c.getLong(0);
+        c.close();
+        return n;
+    }
+
+    public long monthlyRevenue(long from,long to){
+        String[] a={String.valueOf(from),String.valueOf(to)};
+        long sales=scalarLong("SELECT COALESCE(SUM(amount),0) FROM clients WHERE created_at>=? AND created_at<?",a);
+        long renewals=scalarLong("SELECT COALESCE(SUM(amount),0) FROM renewals WHERE created_at>=? AND created_at<?",a);
+        return sales+renewals;
+    }
+
+    public long monthlyPurchase(long from,long to){
+        String[] a={String.valueOf(from),String.valueOf(to)};
+        long sales=scalarLong("SELECT COALESCE(SUM(purchase_cost),0) FROM clients WHERE created_at>=? AND created_at<?",a);
+        long renewals=scalarLong("SELECT COALESCE(SUM(purchase_cost),0) FROM renewals WHERE created_at>=? AND created_at<?",a);
+        return sales+renewals;
+    }
+
+    public long monthlyProfit(long from,long to){
+        return monthlyRevenue(from,to)-monthlyPurchase(from,to);
+    }
+
+    public long monthlyUnpaid(long from,long to){
+        String[] a={String.valueOf(from),String.valueOf(to)};
+        long sales=scalarLong("SELECT COALESCE(SUM(amount),0) FROM clients WHERE paid=0 AND created_at>=? AND created_at<?",a);
+        long renewals=scalarLong("SELECT COALESCE(SUM(amount),0) FROM renewals WHERE paid=0 AND created_at>=? AND created_at<?",a);
+        return sales+renewals;
+    }
+
+    public int monthlySalesCount(long from,long to){
+        return (int)scalarLong("SELECT COUNT(*) FROM clients WHERE created_at>=? AND created_at<?",new String[]{String.valueOf(from),String.valueOf(to)});
+    }
+
+    public int monthlyRenewalCount(long from,long to){
+        return (int)scalarLong("SELECT COUNT(*) FROM renewals WHERE created_at>=? AND created_at<?",new String[]{String.valueOf(from),String.valueOf(to)});
+    }
+
     public int renewalCount(long id) {
         Cursor c=getReadableDatabase().rawQuery("SELECT COUNT(*) FROM renewals WHERE client_id=?", new String[]{String.valueOf(id)});
         c.moveToFirst(); int n=c.getInt(0); c.close(); return n;

@@ -845,6 +845,45 @@ public class MainActivity extends Activity {
         counts.addView(card("تمدید",String.valueOf(renewalCount),GOLD),new LinearLayout.LayoutParams(0,dp(105),1));
         content.addView(counts);
 
+        TextView debtTitle=tv("بدهکارهای این ماه",17,NAVY,true);
+        LinearLayout.LayoutParams dtp=new LinearLayout.LayoutParams(-1,-2);
+        dtp.setMargins(0,dp(14),0,dp(6));
+        content.addView(debtTitle,dtp);
+
+        Cursor debtors=db.monthlyDebtors(from,to);
+        int debtorRows=0;
+        while(debtors.moveToNext()){
+            debtorRows++;
+            long clientId=debtors.getLong(debtors.getColumnIndexOrThrow("client_id"));
+            String debtorName=debtors.getString(debtors.getColumnIndexOrThrow("name"));
+            String debtorUser=debtors.getString(debtors.getColumnIndexOrThrow("username"));
+            String debtType=debtors.getString(debtors.getColumnIndexOrThrow("debt_type"));
+            long debtAmount=debtors.getLong(debtors.getColumnIndexOrThrow("amount"));
+
+            LinearLayout row=new LinearLayout(this);
+            row.setOrientation(LinearLayout.VERTICAL);
+            row.setPadding(dp(13),dp(10),dp(13),dp(10));
+            row.setBackground(bg(Color.WHITE,12));
+            row.setElevation(dp(1));
+
+            row.addView(tv(debtorName+"   •   "+debtorUser,15,NAVY,true));
+            row.addView(tv(debtType+"   |   "+money(debtAmount)+" تومان پرداخت‌نشده",13,RED,true));
+            row.setOnClickListener(v->showDetail(clientId));
+
+            LinearLayout.LayoutParams drp=new LinearLayout.LayoutParams(-1,-2);
+            drp.setMargins(0,0,0,dp(8));
+            content.addView(row,drp);
+        }
+        debtors.close();
+
+        if(debtorRows==0){
+            TextView noDebt=tv("برای این ماه مبلغ پرداخت‌نشده‌ای ثبت نشده است.",14,GREEN,true);
+            noDebt.setBackground(bg(Color.WHITE,12));
+            noDebt.setGravity(Gravity.CENTER);
+            noDebt.setPadding(dp(12),dp(14),dp(12),dp(14));
+            content.addView(noDebt);
+        }
+
         TextView note=tv("گزارش بر اساس تاریخ ثبت فروش و تمدید محاسبه می‌شود. برای رکوردهای قدیمی که قیمت خرید وارد نشده، قیمت خرید صفر در نظر گرفته می‌شود.",13,Color.GRAY,false);
         note.setBackground(bg(Color.WHITE,12));
         note.setPadding(dp(12),dp(12),dp(12),dp(12));

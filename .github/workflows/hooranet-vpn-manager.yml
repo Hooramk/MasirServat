@@ -1,5 +1,9 @@
 name: Build Hooranet VPN Manager APK
 
+concurrency:
+  group: hooranet-vpn-manager-signing
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
@@ -31,11 +35,20 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Preserve Android debug signing key
+      - name: Preserve Android signing key
         uses: actions/cache@v4
         with:
-          path: ~/.android/debug.keystore
-          key: hooranet-vpn-debug-keystore-v1
+          path: ~/.android
+          key: hooranet-vpn-signing-v2
+
+      - name: Ensure stable Android signing key
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -v               -keystore "$HOME/.android/debug.keystore"               -storepass android               -alias androiddebugkey               -keypass android               -dname "CN=Hooranet Android,O=Hooranet,C=IR"               -keyalg RSA               -keysize 2048               -validity 10000
+          fi
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey
 
       - name: Use runner Android SDK
         shell: bash

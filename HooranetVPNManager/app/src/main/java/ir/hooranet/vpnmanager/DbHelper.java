@@ -111,6 +111,24 @@ public class DbHelper extends SQLiteOpenHelper {
         return sales+renewals;
     }
 
+    public Cursor monthlyDebtors(long from,long to){
+        String[] a={
+                String.valueOf(from),String.valueOf(to),
+                String.valueOf(from),String.valueOf(to)
+        };
+        String sql=
+                "SELECT c._id AS client_id,c.name AS name,c.phone AS phone,c.username AS username,"+
+                "c.amount AS amount,'فروش' AS debt_type,c.created_at AS created_at "+
+                "FROM clients c WHERE c.paid=0 AND c.created_at>=? AND c.created_at<? "+
+                "UNION ALL "+
+                "SELECT c._id AS client_id,c.name AS name,c.phone AS phone,c.username AS username,"+
+                "r.amount AS amount,'تمدید' AS debt_type,r.created_at AS created_at "+
+                "FROM renewals r JOIN clients c ON c._id=r.client_id "+
+                "WHERE r.paid=0 AND r.created_at>=? AND r.created_at<? "+
+                "ORDER BY created_at DESC";
+        return getReadableDatabase().rawQuery(sql,a);
+    }
+
     public int monthlySalesCount(long from,long to){
         return (int)scalarLong("SELECT COUNT(*) FROM clients WHERE created_at>=? AND created_at<?",new String[]{String.valueOf(from),String.valueOf(to)});
     }

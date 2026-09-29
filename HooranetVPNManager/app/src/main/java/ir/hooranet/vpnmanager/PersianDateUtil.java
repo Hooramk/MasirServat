@@ -39,6 +39,34 @@ public class PersianDateUtil {
 
     public static int daysRemaining(long expiryMs){ return (int)Math.ceil((expiryMs-System.currentTimeMillis())/86400000.0); }
 
+    public static int[] currentJalaliYearMonth(){
+        try{
+            int[] p=parseParts(today());
+            return new int[]{p[0],p[1]};
+        }catch(Exception e){
+            return new int[]{1400,1};
+        }
+    }
+
+    public static long monthStart(int year,int month){
+        try{
+            return parse(String.format(Locale.US,"%04d/%02d/01",year,month));
+        }catch(Exception e){
+            return System.currentTimeMillis();
+        }
+    }
+
+    public static int[] shiftMonth(int year,int month,int delta){
+        int total=year*12+(month-1)+delta;
+        return new int[]{Math.floorDiv(total,12),Math.floorMod(total,12)+1};
+    }
+
+    public static String monthTitle(int year,int month){
+        String[] names={"فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"};
+        if(month<1||month>12) return year+"/"+month;
+        return names[month-1]+" "+year;
+    }
+
     public static boolean isLeapJalali(int jy){
         try{
             int[] g1=jalaliToGregorian(jy,1,1), g2=jalaliToGregorian(jy+1,1,1);

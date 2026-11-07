@@ -9,10 +9,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class DbHelper extends SQLiteOpenHelper {
-    public DbHelper(Context c) { super(c, "hooranet_vpn.db", null, 3); }
+    public DbHelper(Context c) { super(c, "hooranet_vpn.db", null, 4); }
 
     @Override public void onCreate(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE clients (_id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,username TEXT NOT NULL UNIQUE,vpn_type TEXT,server_name TEXT,start_jalali TEXT,expiry_jalali TEXT,start_epoch INTEGER,expiry_epoch INTEGER,amount INTEGER DEFAULT 0,purchase_cost INTEGER DEFAULT 0,paid INTEGER DEFAULT 1,notes TEXT,created_at INTEGER)");
+        db.execSQL("CREATE TABLE clients (_id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,username TEXT NOT NULL UNIQUE,vpn_type TEXT,server_name TEXT,start_jalali TEXT,expiry_jalali TEXT,start_epoch INTEGER,expiry_epoch INTEGER,amount INTEGER DEFAULT 0,purchase_cost INTEGER DEFAULT 0,paid INTEGER DEFAULT 1,notes TEXT,created_at INTEGER,archived INTEGER DEFAULT 0,notified_expiry_epoch INTEGER DEFAULT 0)");
         db.execSQL("CREATE TABLE renewals (_id INTEGER PRIMARY KEY AUTOINCREMENT,client_id INTEGER,old_expiry_jalali TEXT,new_expiry_jalali TEXT,amount INTEGER DEFAULT 0,purchase_cost INTEGER DEFAULT 0,paid INTEGER DEFAULT 1,created_at INTEGER)");
         db.execSQL("CREATE TABLE permanent_customers (_id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,created_at INTEGER,updated_at INTEGER)");
         db.execSQL("CREATE UNIQUE INDEX idx_permanent_customers_phone ON permanent_customers(phone) WHERE phone IS NOT NULL AND phone <> '';");
@@ -29,6 +29,10 @@ public class DbHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE clients ADD COLUMN purchase_cost INTEGER DEFAULT 0");
             db.execSQL("ALTER TABLE renewals ADD COLUMN purchase_cost INTEGER DEFAULT 0");
         }
+        if(oldV < 4){
+            db.execSQL("ALTER TABLE clients ADD COLUMN archived INTEGER DEFAULT 0");
+            db.execSQL("ALTER TABLE clients ADD COLUMN notified_expiry_epoch INTEGER DEFAULT 0");
+        }
     }
 
     public long saveClient(Long id, String name, String phone, String username, String type,
@@ -43,6 +47,10 @@ public class DbHelper extends SQLiteOpenHelper {
         if (id == null) v.put("created_at", System.currentTimeMillis());
         SQLiteDatabase db = getWritableDatabase();
         if (id == null) return db.insertOrThrow("clients", null, v);
+        Cursor old=getClient(id);
+        long oldExpiry=old.moveToFirst()?old.getLong(old.getColumnIndexOrThrow("expiry_epoch")):0;
+        old.close();
+        if(oldExpiry!=expiryEpoch) { v.put("notified_expiry_epoch",0); v.put("archived",0); }
         db.update("clients", v, "_id=?", new String[]{String.valueOf(id)});
         return id;
     }
@@ -50,10 +58,25 @@ public class DbHelper extends SQLiteOpenHelper {
     public Cursor list(String q) {
         SQLiteDatabase db = getReadableDatabase();
         if (q == null || q.trim().isEmpty())
-            return db.rawQuery("SELECT * FROM clients ORDER BY expiry_epoch ASC", null);
+            return db.rawQuery("SELECT * FROM clients WHERE archived=0 ORDER BY expiry_epoch ASC", null);
         String s = "%" + q.trim() + "%";
-        return db.rawQuery("SELECT * FROM clients WHERE name LIKE ? OR phone LIKE ? OR username LIKE ? OR server_name LIKE ? ORDER BY expiry_epoch ASC", new String[]{s,s,s,s});
+        return db.rawQuery("SELECT * FROM clients WHERE archived=0 AND (name LIKE ? OR phone LIKE ? OR username LIKE ? OR server_name LIKE ?) ORDER BY expiry_epoch ASC", new String[]{s,s,s,s});
     }
+
+    public Cursor listArchived(String q) {
+        SQLiteDatabase db=getReadableDatabase();
+        if(q==null || q.trim().isEmpty()) return db.rawQuery("SELECT * FROM clients WHERE archived=1 ORDER BY expiry_epoch DESC",null);
+        String s="%"+q.trim()+"%";
+        return db.rawQuery("SELECT * FROM clients WHERE archived=1 AND (name LIKE ? OR phone LIKE ? OR username LIKE ? OR server_name LIKE ?) ORDER BY expiry_epoch DESC",new String[]{s,s,s,s});
+    }
+    public Cursor expiryCandidates() { return getReadableDatabase().rawQuery("SELECT _id,name,expiry_epoch,notified_expiry_epoch,archived FROM clients",null); }
+    public void markExpiryNotified(long id,long expiry) {
+        ContentValues v=new ContentValues(); v.put("notified_expiry_epoch",expiry);
+        getWritableDatabase().update("clients",v,"_id=? AND expiry_epoch=?",new String[]{String.valueOf(id),String.valueOf(expiry)});
+    }
+    public void archiveClient(long id) { ContentValues v=new ContentValues(); v.put("archived",1); getWritableDatabase().update("clients",v,"_id=?",new String[]{String.valueOf(id)}); }
+    public void restoreClient(long id) { ContentValues v=new ContentValues(); v.put("archived",0); getWritableDatabase().update("clients",v,"_id=?",new String[]{String.valueOf(id)}); }
+    public int archivedCount() { return count("archived=1",null); }
 
     public Cursor getClient(long id) {
         return getReadableDatabase().rawQuery("SELECT * FROM clients WHERE _id=?", new String[]{String.valueOf(id)});
@@ -211,7 +234,7 @@ public class DbHelper extends SQLiteOpenHelper {
 
         SQLiteDatabase db=getWritableDatabase();
         ContentValues v=new ContentValues();
-        v.put("expiry_epoch",newEpoch); v.put("expiry_jalali",newJ);
+        v.put("expiry_epoch",newEpoch); v.put("expiry_jalali",newJ); v.put("archived",0); v.put("notified_expiry_epoch",0);
         db.update("clients",v,"_id=?",new String[]{String.valueOf(id)});
 
         ContentValues r=new ContentValues();

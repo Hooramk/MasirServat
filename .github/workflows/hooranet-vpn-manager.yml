@@ -1,20 +1,14 @@
 name: Build Hooranet VPN Manager APK
 
 concurrency:
-  group: hooranet-vpn-manager-signing
-  cancel-in-progress: true
+  group: hooranet-vpn-manager-migration-signing
+  cancel-in-progress: false
 
 on:
   workflow_dispatch:
   push:
     branches:
       - hooranet-vpn-manager
-    paths:
-      - 'HooranetVPNManager/**'
-      - '.github/workflows/hooranet-vpn-manager.yml'
-  pull_request:
-    branches:
-      - main
     paths:
       - 'HooranetVPNManager/**'
       - '.github/workflows/hooranet-vpn-manager.yml'
@@ -35,27 +29,34 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Preserve Android signing key
+      # A distinct signing cache is used for the migration package.
+      # The same cache key must be retained for subsequent releases.
+      - name: Restore migration signing key
         uses: actions/cache@v4
         with:
-          path: ~/.android
-          key: hooranet-vpn-signing-v2
+          path: ~/.android/debug.keystore
+          key: hooranet-vpn-migration-signing-v1
 
-      - name: Ensure stable Android signing key
+      - name: Ensure migration signing key
         shell: bash
         run: |
           mkdir -p "$HOME/.android"
           if [ ! -f "$HOME/.android/debug.keystore" ]; then
-            keytool -genkeypair -v               -keystore "$HOME/.android/debug.keystore"               -storepass android               -alias androiddebugkey               -keypass android               -dname "CN=Hooranet Android,O=Hooranet,C=IR"               -keyalg RSA               -keysize 2048               -validity 10000
+            keytool -genkeypair -v \
+              -keystore "$HOME/.android/debug.keystore" \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -dname "CN=Hooranet Migration,O=Hooranet,C=IR" \
+              -keyalg RSA -keysize 2048 -validity 10000
           fi
-          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey
+          keytool -list -v -keystore "$HOME/.android/debug.keystore" \
+            -storepass android -alias androiddebugkey
 
       - name: Use runner Android SDK
         shell: bash
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
-          echo "SDKMANAGER=$SDKMANAGER"
           test -n "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
@@ -65,15 +66,23 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Build debug APK
+      - name: Build APK
         run: gradle -p HooranetVPNManager assembleDebug --stacktrace
 
+      - name: Verify APK metadata
+        shell: bash
+        run: |
+          APK="HooranetVPNManager/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | head -n 3
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$APK"
+
       - name: Rename APK
-        run: cp HooranetVPNManager/app/build/outputs/apk/debug/app-debug.apk HooranetVPNManager.apk
+        run: cp HooranetVPNManager/app/build/outputs/apk/debug/app-debug.apk HooranetVPNManager-2.2.0-migration.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: HooranetVPNManager-APK
-          path: HooranetVPNManager.apk
+          name: HooranetVPNManager-2.2.0-migration
+          path: HooranetVPNManager-2.2.0-migration.apk
           retention-days: 30

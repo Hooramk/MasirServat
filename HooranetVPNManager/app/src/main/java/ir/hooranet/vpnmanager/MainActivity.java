@@ -35,9 +35,19 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(NAVY);
         getWindow().setNavigationBarColor(NAVY);
         db=new DbHelper(this);
+        ExpiryAlarmReceiver.runNow(this);
+        if(android.os.Build.VERSION.SDK_INT>=33 &&
+                checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},703);
+        }
         showDashboard();
     }
 
+    @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
+        super.onRequestPermissionsResult(requestCode,permissions,grantResults);
+        if(requestCode==703 && grantResults.length>0 && grantResults[0]==android.content.pm.PackageManager.PERMISSION_GRANTED)
+            ExpiryAlarmReceiver.runNow(this);
+    }
     private int dp(int v){ return (int)(v*getResources().getDisplayMetrics().density); }
 
     private TextView tv(String t,int sp,int color,boolean bold){
@@ -155,9 +165,9 @@ public class MainActivity extends Activity {
         long soon=now+7L*86400000L;
 
         int total=db.count(null,null);
-        int active=db.count("expiry_epoch>=?",new String[]{String.valueOf(now)});
-        int expiring=db.count("expiry_epoch>=? AND expiry_epoch<=?",new String[]{String.valueOf(now),String.valueOf(soon)});
-        int expired=db.count("expiry_epoch<?",new String[]{String.valueOf(now)});
+        int active=db.count("archived=0 AND expiry_epoch>=?",new String[]{String.valueOf(now)});
+        int expiring=db.count("archived=0 AND expiry_epoch>=? AND expiry_epoch<=?",new String[]{String.valueOf(now),String.valueOf(soon)});
+        int expired=db.archivedCount();
 
         LinearLayout grid=new LinearLayout(this);
         grid.setOrientation(LinearLayout.VERTICAL);
@@ -166,7 +176,7 @@ public class MainActivity extends Activity {
         r1.addView(card("کل مشتری‌ها",String.valueOf(total),NAVY),new LinearLayout.LayoutParams(0,dp(105),1));
         r1.addView(card("فعال",String.valueOf(active),GREEN),new LinearLayout.LayoutParams(0,dp(105),1));
         r2.addView(card("تا ۷ روز",String.valueOf(expiring),ORANGE),new LinearLayout.LayoutParams(0,dp(105),1));
-        r2.addView(card("منقضی",String.valueOf(expired),RED),new LinearLayout.LayoutParams(0,dp(105),1));
+        r2.addView(card("بایگانی",String.valueOf(expired),RED),new LinearLayout.LayoutParams(0,dp(105),1));
 
         grid.addView(r1);
         grid.addView(r2);
@@ -196,6 +206,12 @@ public class MainActivity extends Activity {
             showFinancialReport(ym[0],ym[1]);
         });
 
+        Button archive=btn("مشاهده بایگانی");
+        archive.setBackground(bg(RED,12));
+        LinearLayout.LayoutParams arp=new LinearLayout.LayoutParams(-1,dp(48));
+        arp.setMargins(0,dp(8),0,dp(8));
+        content.addView(archive,arp);
+        archive.setOnClickListener(v->showArchive(""));
         TextView h=tv("اشتراک‌های نیازمند پیگیری",18,NAVY,true);
         content.addView(h);
         addRows("",true);
@@ -232,6 +248,12 @@ public class MainActivity extends Activity {
         content.addView(permanent,pp);
         permanent.setOnClickListener(v->showPermanentCustomers());
 
+        Button archive=btn("بایگانی مشتریان");
+        archive.setBackground(bg(RED,12));
+        LinearLayout.LayoutParams ar=new LinearLayout.LayoutParams(-1,dp(48));
+        ar.setMargins(0,0,0,dp(10));
+        content.addView(archive,ar);
+        archive.setOnClickListener(v->showArchive(""));
         search=input("جست‌وجو: نام، موبایل، یوزرنیم یا سرور");
         search.setText(q);
         content.addView(search);
@@ -249,6 +271,58 @@ public class MainActivity extends Activity {
         fillRows(box,q,false);
     }
 
+    private void showArchive(String q){
+        shell("بایگانی مشتریان");
+        Button back=btn("بازگشت به مشتریان فعال");
+        back.setBackground(bg(GOLD,12));
+        content.addView(back,new LinearLayout.LayoutParams(-1,dp(48)));
+        back.setOnClickListener(v->showList(""));
+        EditText filter=input("جست‌وجو در بایگانی");
+        filter.setText(q);
+        content.addView(filter);
+        LinearLayout rows=new LinearLayout(this);
+        rows.setOrientation(LinearLayout.VERTICAL);
+        content.addView(rows);
+        fillArchiveRows(rows,q);
+        filter.addTextChangedListener(new TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int st,int c,int a){}
+            public void onTextChanged(CharSequence s,int st,int b,int c){fillArchiveRows(rows,s.toString());}
+            public void afterTextChanged(Editable e){}
+        });
+    }
+    private void fillArchiveRows(LinearLayout rows,String q){
+        rows.removeAllViews();
+        Cursor c=db.listArchived(q);
+        int count=0;
+        while(c.moveToNext()){
+            count++;
+            long id=c.getLong(c.getColumnIndexOrThrow("_id"));
+            String name=c.getString(c.getColumnIndexOrThrow("name"));
+            String user=c.getString(c.getColumnIndexOrThrow("username"));
+            String expiry=c.getString(c.getColumnIndexOrThrow("expiry_jalali"));
+            String phone=c.getString(c.getColumnIndexOrThrow("phone"));
+            LinearLayout item=new LinearLayout(this);
+            item.setOrientation(LinearLayout.VERTICAL);
+            item.setPadding(dp(12),dp(10),dp(12),dp(10));
+            item.setBackground(bg(Color.WHITE,12));
+            item.addView(tv(name+" • "+user,15,NAVY,true));
+            item.addView(tv("موبایل: "+(phone==null?"":phone)+" | انقضا: "+expiry,13,Color.DKGRAY,false));
+            Button restore=btn("بازگردانی به فهرست فعال");
+            restore.setBackground(bg(GREEN,10));
+            item.addView(restore,new LinearLayout.LayoutParams(-1,dp(44)));
+            restore.setOnClickListener(v->{
+                db.restoreClient(id);
+                toast("مشتری به فهرست فعال بازگردانده شد");
+                fillArchiveRows(rows,q);
+            });
+            item.setOnClickListener(v->showDetail(id));
+            LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);
+            p.setMargins(0,0,0,dp(8));
+            rows.addView(item,p);
+        }
+        c.close();
+        if(count==0) rows.addView(tv("مشتری بایگانی‌شده‌ای وجود ندارد.",14,Color.GRAY,false));
+    }
     private void addRows(String q,boolean followup){
         LinearLayout box=new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);

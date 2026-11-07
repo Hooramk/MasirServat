@@ -7,10 +7,11 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId 'ir.hooranet.vpnmanager.stable'
+        // نصب در کنار نسخه 2.1.0؛ اطلاعات با فایل پشتیبان منتقل می‌شود.
+        applicationId 'ir.hooranet.vpnmanager.migration'
         minSdk 26
         targetSdk 35
-        versionCode 23
+        versionCode 24
         versionName '2.2.0'
     }
 
